@@ -9,7 +9,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/gorilla/mux"
-	"github.com/mager/sweeper/opensea"
+	"github.com/mager/keiko/opensea"
 	"google.golang.org/api/iterator"
 )
 

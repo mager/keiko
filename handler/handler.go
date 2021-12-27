@@ -6,10 +6,10 @@ import (
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/firestore"
 	"github.com/gorilla/mux"
-	"github.com/mager/sweeper/coinstats"
-	"github.com/mager/sweeper/etherscan"
-	"github.com/mager/sweeper/infura"
-	"github.com/mager/sweeper/opensea"
+	"github.com/mager/keiko/coinstats"
+	"github.com/mager/keiko/etherscan"
+	"github.com/mager/keiko/infura"
+	"github.com/mager/keiko/opensea"
 	"go.uber.org/zap"
 )
 

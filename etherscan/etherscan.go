@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/mager/sweeper/config"
+	"github.com/mager/keiko/config"
 	etherscan "github.com/nanmu42/etherscan-api"
 	"go.uber.org/zap"
 )

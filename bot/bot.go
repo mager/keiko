@@ -10,7 +10,7 @@ import (
 	"cloud.google.com/go/firestore"
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
-	"github.com/mager/sweeper/opensea"
+	"github.com/mager/keiko/opensea"
 	"go.uber.org/zap"
 )
 

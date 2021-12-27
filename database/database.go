@@ -7,8 +7,8 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/firestore"
-	bq "github.com/mager/sweeper/bigquery"
-	"github.com/mager/sweeper/opensea"
+	bq "github.com/mager/keiko/bigquery"
+	"github.com/mager/keiko/opensea"
 	"go.uber.org/zap"
 )
 

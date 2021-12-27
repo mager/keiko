@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/mager/sweeper/config"
+	"github.com/mager/keiko/config"
 	ens "github.com/wealdtech/go-ens/v3"
 	"go.uber.org/zap"
 )
