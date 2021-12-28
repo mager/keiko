@@ -12,6 +12,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type User struct {
+	Collections []string `firestore:"collections" json:"collections"`
+}
+
 type CollectionV2 struct {
 	Name           string    `firestore:"name" json:"name"`
 	Thumb          string    `firestore:"thumb" json:"thumb"`
