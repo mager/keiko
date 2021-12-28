@@ -9,7 +9,9 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/gorilla/mux"
+	"github.com/mager/keiko/database"
 	"github.com/mager/keiko/opensea"
+	"github.com/mager/keiko/utils"
 	"google.golang.org/api/iterator"
 )
 
@@ -27,20 +29,23 @@ type GetCollectionResp struct {
 	Thumb             string                    `json:"thumb"`
 	OpenSeaCollection opensea.OpenSeaCollection `json:"opensea_collection"`
 	Stats             []Stat                    `json:"stats"`
+	IsFollowing       bool                      `json:"isFollowing"`
 }
 
 // getCollection is the route handler for the GET /collection/{slug} endpoint
 func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	var (
-		ctx        = context.TODO()
-		resp       = GetCollectionResp{}
-		collection = h.database.Collection("collections")
-		slug       = mux.Vars(r)["slug"]
-		stats      = make([]Stat, 0)
+		ctx         = context.TODO()
+		resp        = GetCollectionResp{}
+		collections = h.database.Collection("collections")
+		users       = h.database.Collection("users")
+		address     = r.Header.Get("X-Address")
+		slug        = mux.Vars(r)["slug"]
+		stats       = make([]Stat, 0)
 	)
 
 	// Fetch collection from database
-	docsnap, err := collection.Doc(slug).Get(ctx)
+	docsnap, err := collections.Doc(slug).Get(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -94,6 +99,24 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp.Stats = stats
+
+	// Check if the user is following the collection
+	if address != "" {
+		var db database.User
+		docsnap, err := users.Doc(address).Get(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if err := docsnap.DataTo(&db); err != nil {
+			h.logger.Error(err.Error())
+		} else {
+			if utils.Contains(db.Collections, slug) {
+				resp.IsFollowing = true
+			}
+		}
+	}
 
 	json.NewEncoder(w).Encode(resp)
 }

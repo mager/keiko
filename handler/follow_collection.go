@@ -16,13 +16,13 @@ type FollowCollectionResp struct {
 
 func (h *Handler) followCollection(w http.ResponseWriter, r *http.Request) {
 	var (
-		ctx         = context.TODO()
-		err         error
-		resp        = FollowCollectionResp{}
-		collections = h.database.Collection("users")
-		address     = r.Header.Get("X-Address")
-		slug        = mux.Vars(r)["slug"]
-		db          database.User
+		ctx     = context.TODO()
+		err     error
+		resp    = FollowCollectionResp{}
+		users   = h.database.Collection("users")
+		address = r.Header.Get("X-Address")
+		slug    = mux.Vars(r)["slug"]
+		db      database.User
 	)
 
 	if address == "" {
@@ -30,7 +30,7 @@ func (h *Handler) followCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	docsnap, err := collections.Doc(address).Get(ctx)
+	docsnap, err := users.Doc(address).Get(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -48,7 +48,7 @@ func (h *Handler) followCollection(w http.ResponseWriter, r *http.Request) {
 
 	db.Collections = append(db.Collections, slug)
 
-	_, err = collections.Doc(address).Set(ctx, db)
+	_, err = users.Doc(address).Set(ctx, db)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
