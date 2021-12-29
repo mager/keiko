@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"cloud.google.com/go/firestore"
 	"github.com/mager/keiko/database"
 	"google.golang.org/api/iterator"
 )
@@ -43,7 +44,7 @@ func (h *Handler) getFollowing(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch the list of collections that the user follows
-	q := collections.Where("slug", "in", db.Collections)
+	q := collections.Where("slug", "in", db.Collections).OrderBy("floor", firestore.Desc)
 	iter := q.Documents(ctx)
 	defer iter.Stop()
 
