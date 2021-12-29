@@ -63,6 +63,10 @@ func (h *Handler) registerRoutes() {
 	h.router.HandleFunc("/trending", h.getTrending).
 		Methods("GET")
 
+	// Following
+	h.router.HandleFunc("/following", h.getFollowing).
+		Methods("GET")
+
 	// Collections
 	h.router.HandleFunc("/collection/{slug}", h.getCollection).
 		Methods("GET")
