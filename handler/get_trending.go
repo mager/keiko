@@ -67,7 +67,6 @@ func (h *Handler) getTrending(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	}
-	h.logger.Infow("Fetched collections", "howmany", len(highestFloorCollections))
 
 	// Sort highest floor collections by floor price
 	sort.Slice(highestFloorCollections[:], func(i, j int) bool {

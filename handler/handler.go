@@ -75,6 +75,9 @@ func (h *Handler) registerRoutes() {
 	h.router.HandleFunc("/collection/{slug}/follow", h.followCollection).
 		Methods("POST").
 		Name("followCollection")
+	h.router.HandleFunc("/collection/{slug}/unfollow", h.unfollowCollection).
+		Methods("POST").
+		Name("unfollowCollection")
 
 	// Testing
 	h.router.HandleFunc("/collection/{slug}/tokens", h.getCollectionTokens).
@@ -88,7 +91,7 @@ func verifySignatureMiddleware(next http.Handler) http.Handler {
 		msg := r.Header.Get("X-Message")
 		currentRoute := mux.CurrentRoute(r).GetName()
 
-		signedRoutes := []string{"followCollection"}
+		signedRoutes := []string{"followCollection", "unfollowCollection"}
 		if utils.Contains(signedRoutes, currentRoute) {
 			if !verifySig(address, sig, []byte(msg)) {
 				log.Println("Signature verification failed")
