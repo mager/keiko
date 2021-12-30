@@ -65,20 +65,10 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	resp.Floor = d["floor"].(float64)
 	resp.Updated = d["updated"].(time.Time)
 
-	// Fetch collection from OpenSea
-	openSeaCollection, err := h.os.GetCollection(slug)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	thumb, ok := d["thumb"].(string)
 	if ok {
 		resp.Thumb = thumb
 	}
-
-	// Hydrate response with OpenSea content
-	resp.OpenSeaCollection = openSeaCollection.Collection
 
 	// Fetch time-series data from BigQuery
 	q := h.bq.Query(fmt.Sprintf(`
