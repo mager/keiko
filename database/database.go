@@ -25,6 +25,9 @@ type CollectionV2 struct {
 	SevenDayVolume  float64   `firestore:"7d" json:"7d"`
 	ThirtyDayVolume float64   `firestore:"30d" json:"30d"`
 	MarketCap       float64   `firestore:"cap" json:"cap"`
+	TotalSupply     float64   `firestore:"supply" json:"supply"`
+	NumOwners       int       `firestore:"num" json:"num"`
+	TotalSales      float64   `firestore:"sales" json:"sales"`
 	Updated         time.Time `firestore:"updated" json:"updated"`
 }
 
