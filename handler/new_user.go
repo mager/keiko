@@ -24,7 +24,7 @@ func (h *Handler) newUser(w http.ResponseWriter, r *http.Request) {
 	if !docsnap.Exists() {
 		// Create the user
 		_, err := users.Doc(address).Create(h.ctx, map[string]interface{}{
-			"collection": []string{},
+			"collections": []string{},
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
