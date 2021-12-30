@@ -24,7 +24,6 @@ type GetCollectionResp struct {
 	Name              string                    `json:"name"`
 	Slug              string                    `json:"slug"`
 	Floor             float64                   `json:"floor"`
-	WeeklyVolumeETH   float64                   `json:"weeklyVolumeETH"`
 	Updated           time.Time                 `json:"updated"`
 	Thumb             string                    `json:"thumb"`
 	OpenSeaCollection opensea.OpenSeaCollection `json:"opensea_collection"`
@@ -57,7 +56,6 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	resp.Name = d["name"].(string)
 	resp.Slug = slug
 	resp.Floor = d["floor"].(float64)
-	resp.WeeklyVolumeETH = d["7d"].(float64)
 	resp.Updated = d["updated"].(time.Time)
 
 	// Fetch collection from OpenSea

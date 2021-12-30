@@ -17,12 +17,15 @@ type User struct {
 }
 
 type CollectionV2 struct {
-	Name           string    `firestore:"name" json:"name"`
-	Thumb          string    `firestore:"thumb" json:"thumb"`
-	Floor          float64   `firestore:"floor" json:"floor"`
-	Slug           string    `firestore:"slug" json:"slug"`
-	SevenDayVolume float64   `firestore:"7d" json:"7d"`
-	Updated        time.Time `firestore:"updated" json:"updated"`
+	Name            string    `firestore:"name" json:"name"`
+	Thumb           string    `firestore:"thumb" json:"thumb"`
+	Floor           float64   `firestore:"floor" json:"floor"`
+	Slug            string    `firestore:"slug" json:"slug"`
+	OneDayVolume    float64   `firestore:"1d" json:"1d"`
+	SevenDayVolume  float64   `firestore:"7d" json:"7d"`
+	ThirtyDayVolume float64   `firestore:"30d" json:"30d"`
+	MarketCap       float64   `firestore:"cap" json:"cap"`
+	Updated         time.Time `firestore:"updated" json:"updated"`
 }
 
 // ProvideDB provides a firestore client
