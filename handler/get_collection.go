@@ -29,6 +29,7 @@ type GetCollectionResp struct {
 	OpenSeaCollection opensea.OpenSeaCollection `json:"opensea_collection"`
 	Stats             []Stat                    `json:"stats"`
 	IsFollowing       bool                      `json:"isFollowing"`
+	Collection        database.CollectionV2     `json:"collection"`
 }
 
 // getCollection is the route handler for the GET /collection/{slug} endpoint
@@ -51,7 +52,13 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d := docsnap.Data()
+	var c database.CollectionV2
+	if err := docsnap.DataTo(&c); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	resp.Collection = c
 	// Set slug
 	resp.Name = d["name"].(string)
 	resp.Slug = slug
