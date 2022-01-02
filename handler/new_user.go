@@ -7,6 +7,10 @@ import (
 
 type NewUserReq struct {
 	ENSName string `json:"ensName"`
+	Slug    string `json:"slug"`
+	Name    string `json:"name"`
+	Photo   string `json:"photo"`
+	IsWhale bool   `json:"isWhale"`
 }
 
 type NewUserResp struct {
