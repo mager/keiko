@@ -10,6 +10,8 @@ type NewUserReq struct {
 	Slug    string `json:"slug"`
 	Name    string `json:"name"`
 	Photo   string `json:"photo"`
+	Twitter string `json:"twitter"`
+	OpenSea string `json:"openSea"`
 	IsWhale bool   `json:"isWhale"`
 }
 
@@ -19,7 +21,6 @@ type NewUserResp struct {
 
 func (h *Handler) newUser(w http.ResponseWriter, r *http.Request) {
 	var (
-		// ctx  = context.TODO()
 		req     NewUserReq
 		users   = h.database.Collection("users")
 		resp    = NewUserResp{}
@@ -38,10 +39,32 @@ func (h *Handler) newUser(w http.ResponseWriter, r *http.Request) {
 	// If the user already exists, return success
 	if !docsnap.Exists() {
 		// Create the user
-		_, err := users.Doc(address).Create(h.ctx, map[string]interface{}{
+		d := map[string]interface{}{
 			"collections": []string{},
-			"ensName":     req.ENSName,
-		})
+		}
+		if req.ENSName != "" {
+			d["ensName"] = req.ENSName
+		}
+		if req.Slug != "" {
+			d["slug"] = req.Slug
+		}
+		if req.Name != "" {
+			d["name"] = req.Name
+		}
+		if req.Photo != "" {
+			d["photo"] = req.Photo
+		}
+		if req.Twitter != "" {
+			d["twitter"] = req.Twitter
+		}
+		if req.OpenSea != "" {
+			d["openSea"] = req.OpenSea
+		}
+		if req.IsWhale {
+			d["isWhale"] = true
+		}
+
+		_, err := users.Doc(address).Create(h.ctx, d)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

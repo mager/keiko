@@ -14,6 +14,13 @@ import (
 
 type User struct {
 	Collections []string `firestore:"collections" json:"collections"`
+	ENSName     string   `firestore:"ensName" json:"ensName"`
+	Slug        string   `firestore:"slug" json:"slug"`
+	Name        string   `firestore:"name" json:"name"`
+	Photo       string   `firestore:"photo" json:"photo"`
+	Twitter     string   `firestore:"twitter" json:"twitter"`
+	OpenSea     string   `firestore:"openSea" json:"openSea"`
+	IsWhale     bool     `firestore:"isWhale" json:"isWhale"`
 }
 
 type CollectionV2 struct {
