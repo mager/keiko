@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/mager/keiko/database"
 	"github.com/mager/keiko/utils"
+	"github.com/mager/sweeper/database"
 )
 
 type FollowCollectionResp struct {

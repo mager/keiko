@@ -7,8 +7,8 @@ import (
 	"sort"
 
 	"cloud.google.com/go/firestore"
-	"github.com/mager/keiko/database"
 	"github.com/mager/keiko/utils"
+	"github.com/mager/sweeper/database"
 	"google.golang.org/api/iterator"
 )
 

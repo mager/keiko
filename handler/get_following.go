@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/firestore"
-	"github.com/mager/keiko/database"
+	"github.com/mager/sweeper/database"
 	"google.golang.org/api/iterator"
 )
 

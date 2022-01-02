@@ -16,6 +16,7 @@ import (
 	"github.com/mager/keiko/etherscan"
 	"github.com/mager/keiko/infura"
 	"github.com/mager/keiko/opensea"
+	"github.com/mager/keiko/sweeper"
 	"github.com/mager/keiko/utils"
 	"go.uber.org/zap"
 )
@@ -31,6 +32,7 @@ type Handler struct {
 	database        *firestore.Client
 	infuraClient    *infura.InfuraClient
 	etherscanClient *etherscan.EtherscanClient
+	sweeper         sweeper.SweeperClient
 }
 
 // New creates a Handler struct
@@ -44,8 +46,20 @@ func New(
 	database *firestore.Client,
 	infuraClient *infura.InfuraClient,
 	etherscanClient *etherscan.EtherscanClient,
+	sweeper sweeper.SweeperClient,
 ) *Handler {
-	h := Handler{ctx, logger, router, os, bq, cs, database, infuraClient, etherscanClient}
+	h := Handler{
+		ctx,
+		logger,
+		router,
+		os,
+		bq,
+		cs,
+		database,
+		infuraClient,
+		etherscanClient,
+		sweeper,
+	}
 	h.registerRoutes()
 	h.router.Use(verifySignatureMiddleware)
 	return &h

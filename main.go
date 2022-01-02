@@ -16,6 +16,7 @@ import (
 	"github.com/mager/keiko/logger"
 	"github.com/mager/keiko/opensea"
 	"github.com/mager/keiko/router"
+	"github.com/mager/keiko/sweeper"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -32,6 +33,7 @@ func main() {
 			logger.Options,
 			opensea.Options,
 			router.Options,
+			sweeper.Options,
 		),
 		fx.Invoke(Register),
 	).Run()
@@ -48,6 +50,7 @@ func Register(
 	logger *zap.SugaredLogger,
 	openSeaClient opensea.OpenSeaClient,
 	router *mux.Router,
+	sweeper sweeper.SweeperClient,
 ) {
 	// TODO: Remove global context
 	var ctx = context.Background()
@@ -63,5 +66,6 @@ func Register(
 		database,
 		infuraClient,
 		etherscanClient,
+		sweeper,
 	)
 }

@@ -12,9 +12,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
 	"github.com/mager/keiko/bigquery"
-	"github.com/mager/keiko/database"
 	"github.com/mager/keiko/opensea"
 	"github.com/mager/keiko/utils"
+	"github.com/mager/sweeper/database"
 	ens "github.com/wealdtech/go-ens/v3"
 )
 
@@ -186,21 +186,8 @@ func (h *Handler) getInfoV3(w http.ResponseWriter, r *http.Request) {
 		if _, ok := docSnapMap[collection.Slug]; ok {
 			resp.Collections = append(resp.Collections, collectionRespMap[collection.Slug])
 		} else {
-			// Otherwise, add it to the database with floor -1
-			var c = database.CollectionV2{
-				Name:    collection.Name,
-				Slug:    collection.Slug,
-				Floor:   -1,
-				Updated: time.Now(),
-			}
-			go database.AddCollectionToDB(
-				h.ctx,
-				&h.os,
-				h.logger,
-				h.database,
-				collection,
-				c,
-			)
+			// Otherwise, add it to the database
+			go h.sweeper.AddCollection(collection.Slug)
 		}
 	}
 

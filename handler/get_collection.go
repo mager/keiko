@@ -9,9 +9,9 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/gorilla/mux"
-	"github.com/mager/keiko/database"
 	"github.com/mager/keiko/opensea"
 	"github.com/mager/keiko/utils"
+	"github.com/mager/sweeper/database"
 	"google.golang.org/api/iterator"
 )
 
