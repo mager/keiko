@@ -61,14 +61,14 @@ func New(
 		sweeper,
 	}
 	h.registerRoutes()
-	h.router.Use(verifySignatureMiddleware)
+	h.router.Use(checksumAddressMiddleware, verifySignatureMiddleware)
 	return &h
 }
 
 // RegisterRoutes registers all the routes for the route handler
 func (h *Handler) registerRoutes() {
 	// Address
-	h.router.HandleFunc("/address/{address}", h.getInfoV3).
+	h.router.HandleFunc("/address/{address}", h.getAddress).
 		Methods("GET")
 
 	// Stats
@@ -98,21 +98,33 @@ func (h *Handler) registerRoutes() {
 		Methods("GET")
 }
 
+func checksumAddressMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var address = common.HexToAddress(r.Header.Get("X-Address"))
+
+		// Make sure X-Address is checksummed
+		r.Header.Set("X-Address", address.String())
+		next.ServeHTTP(w, r)
+	})
+}
+
 func verifySignatureMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sig := r.Header.Get("X-Signature")
-		address := r.Header.Get("X-Address")
-		msg := r.Header.Get("X-Message")
-		currentRoute := mux.CurrentRoute(r).GetName()
-
-		signedRoutes := []string{"followCollection", "unfollowCollection"}
-		if utils.Contains(signedRoutes, currentRoute) {
+		var (
+			sig              = r.Header.Get("X-Signature")
+			address          = r.Header.Get("X-Address")
+			msg              = r.Header.Get("X-Message")
+			currentRoute     = mux.CurrentRoute(r).GetName()
+			restrictedRoutes = []string{"followCollection", "unfollowCollection"}
+		)
+		if utils.Contains(restrictedRoutes, currentRoute) {
 			if !verifySig(address, sig, []byte(msg)) {
 				log.Println("Signature verification failed")
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 		}
+
 		next.ServeHTTP(w, r)
 	})
 }

@@ -73,8 +73,8 @@ type CollectionResp struct {
 	NFTs     []NFT     `json:"nfts"`
 }
 
-// GetInfoRespV2 is the response for the GET /v2/info endpoint
-type GetInfoRespV2 struct {
+// GetAddressResp is the response for the GET /v2/info endpoint
+type GetAddressResp struct {
 	Collections []CollectionResp `json:"collections"`
 	TotalETH    float64          `json:"totalETH"`
 	ETHPrice    float64          `json:"ethPrice"`
@@ -82,12 +82,12 @@ type GetInfoRespV2 struct {
 	User        database.User    `json:"user"`
 }
 
-// getInfoV3 is the route handler for the GET /address/{address} endpoint
-func (h *Handler) getInfoV3(w http.ResponseWriter, r *http.Request) {
+// getAddress is the route handler for the GET /address/{address} endpoint
+func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	var (
 		err     error
 		req     InfoReq
-		address = mux.Vars(r)["address"]
+		address = common.HexToAddress(mux.Vars(r)["address"]).String()
 		// c       = cache.New(5*time.Minute, 10*time.Minute)
 	)
 
@@ -111,22 +111,22 @@ func (h *Handler) getInfoV3(w http.ResponseWriter, r *http.Request) {
 		collections        = make([]opensea.OpenSeaCollectionCollection, 0)
 		nfts               = make([]opensea.OpenSeaAsset, 0)
 		collectionSlugDocs = make([]*firestore.DocumentRef, 0)
-		resp               = GetInfoRespV2{}
+		resp               = GetAddressResp{}
 		ethPrice           float64
 		totalETH           float64
-		nftsChan           = make(chan []opensea.OpenSeaAsset)
-		collectionsChan    = make(chan []opensea.OpenSeaCollectionCollection)
-		ethPriceChan       = make(chan float64)
-		ensNameChan        = make(chan string)
-		userChan           = make(chan database.User)
+		// nftsChan           = make(chan []opensea.OpenSeaAsset)
+		// collectionsChan    = make(chan []opensea.OpenSeaCollectionCollection)
+		ethPriceChan = make(chan float64)
+		ensNameChan  = make(chan string)
+		userChan     = make(chan database.User)
 	)
 
-	// Fetch the user's collections & NFTs from OpenSea
-	go h.asyncGetOpenSeaCollections(address, w, collectionsChan)
-	collections = <-collectionsChan
+	// // Fetch the user's collections & NFTs from OpenSea
+	// go h.asyncGetOpenSeaCollections(address, w, collectionsChan)
+	// collections = <-collectionsChan
 
-	go h.asyncGetOpenSeaAssets(address, w, nftsChan)
-	nfts = <-nftsChan
+	// go h.asyncGetOpenSeaAssets(address, w, nftsChan)
+	// nfts = <-nftsChan
 
 	// Get ETH price
 	go h.asyncGetETHPrice(ethPriceChan)
@@ -308,8 +308,24 @@ func (h *Handler) asyncGetENSNameFromAddress(address string, rc chan string) {
 func (h *Handler) asyncGetUser(address string, rc chan database.User) {
 	// Fetch user from Firestore
 	var user database.User
-	docsnap, err := h.database.Collection("users").Doc(address).Get(h.ctx)
 
+	// h.logger.Infow("debug", "address", address)
+	// docsnap, err := h.database.Collection("users").Doc(address).Get(h.ctx)
+	// if err != nil {
+	// 	h.logger.Infow("foo", "docsnap", docsnap, "err", err)
+	// 	h.logger.Error(err)
+	// }
+
+	// if docsnap.Exists() {
+	// 	err = docsnap.DataTo(&user)
+	// 	if err != nil {
+	// 		h.logger.Error(err)
+	// 	}
+	// } else {
+	// 	h.logger.Info("User not found in Firestore")
+	// }
+
+	docsnap, err := h.database.Collection("users").Doc(address).Get(h.ctx)
 	if err != nil {
 		h.logger.Error(err)
 	}
@@ -319,6 +335,8 @@ func (h *Handler) asyncGetUser(address string, rc chan database.User) {
 		if err != nil {
 			h.logger.Error(err)
 		}
+	} else {
+		h.logger.Info("User not found in Firestore")
 	}
 
 	rc <- user

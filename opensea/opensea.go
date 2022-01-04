@@ -3,7 +3,6 @@ package opensea
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -142,6 +141,7 @@ func (o *OpenSeaClient) GetCollectionsForAddress(address string, offset int) ([]
 	}
 	q := u.Query()
 	q.Set("offset", fmt.Sprintf("%d", offset))
+	// OpenSea only allows 50 collections per request
 	q.Set("limit", fmt.Sprintf("%d", 50))
 	q.Set("asset_owner", address)
 	u.RawQuery = q.Encode()
@@ -163,7 +163,7 @@ func (o *OpenSeaClient) GetCollectionsForAddress(address string, offset int) ([]
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusTooManyRequests {
-		o.logger.Error("Too many requests, please try again later", "status", resp.StatusCode)
+		o.logger.Warn("Too many requests, please try again later")
 		return []OpenSeaCollectionCollection{}, nil
 	}
 
@@ -203,7 +203,6 @@ func (o *OpenSeaClient) GetCollectionStatsForSlug(slug string) (OpenSeaCollectio
 
 	resp, err := o.httpClient.Do(req)
 	if resp.StatusCode == http.StatusNotFound {
-		// TODO: Delete collection from Firestore
 		return OpenSeaCollectionStat{}, nil
 	}
 	if err != nil {
@@ -350,7 +349,7 @@ func (o *OpenSeaClient) GetCollection(slug string) (OpenSeaCollectionResp, error
 		return collection, nil
 	}
 	if resp.StatusCode == http.StatusTooManyRequests {
-		log.Println("Too many requests, please try again later")
+		o.logger.Warn("Too many requests, please try again later")
 		return collection, nil
 	}
 
