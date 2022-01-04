@@ -80,6 +80,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		err     error
 		req     InfoReq
 		address = mux.Vars(r)["address"]
+		ensName string
 		// c       = cache.New(5*time.Minute, 10*time.Minute)
 	)
 
@@ -92,6 +93,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	// Validate address
 	if !common.IsHexAddress(address) {
 		// Fetch address from ENS if it's not a valid address
+		ensName = address
 		address = h.infuraClient.GetAddressFromENSName(address)
 		if address == "" {
 			http.Error(w, "you must include a valid ETH address in the request", http.StatusBadRequest)
@@ -117,6 +119,14 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		userChan        = make(chan database.User)
 	)
 
+	// Get ENS Name
+	if ensName == "" {
+		go h.asyncGetENSNameFromAddress(address, ensNameChan)
+		resp.ENSName = <-ensNameChan
+	} else {
+		resp.ENSName = ensName
+	}
+
 	// // Fetch the user's collections & NFTs from OpenSea
 	go h.asyncGetOpenSeaCollections(address, w, collectionsChan)
 	collections = <-collectionsChan
@@ -127,10 +137,6 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	// Get ETH price
 	go h.asyncGetETHPrice(ethPriceChan)
 	ethPrice = <-ethPriceChan
-
-	// Get ENS Name
-	go h.asyncGetENSNameFromAddress(address, ensNameChan)
-	resp.ENSName = <-ensNameChan
 
 	// Fetch user
 	go h.asyncGetUser(address, userChan)
