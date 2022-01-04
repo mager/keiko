@@ -177,7 +177,7 @@ func (o *OpenSeaClient) GetCollectionsForAddress(address string, offset int) ([]
 
 	// TODO: Remove once OpenSea fixes rate limit
 	if offset >= 50 {
-		time.Sleep(time.Millisecond * 250)
+		time.Sleep(time.Millisecond * 200)
 	}
 
 	return openSeaCollections, nil

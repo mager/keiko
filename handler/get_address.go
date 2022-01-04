@@ -79,7 +79,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	var (
 		err     error
 		req     InfoReq
-		address = common.HexToAddress(mux.Vars(r)["address"]).String()
+		address = mux.Vars(r)["address"]
 		// c       = cache.New(5*time.Minute, 10*time.Minute)
 	)
 
@@ -97,6 +97,8 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "you must include a valid ETH address in the request", http.StatusBadRequest)
 			return
 		}
+	} else {
+		address = common.HexToAddress(address).String()
 	}
 
 	var (
@@ -106,21 +108,21 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		resp               = GetAddressResp{
 			Address: address,
 		}
-		ethPrice float64
-		totalETH float64
-		// nftsChan           = make(chan []opensea.OpenSeaAsset)
-		// collectionsChan    = make(chan []opensea.OpenSeaCollectionCollection)
-		ethPriceChan = make(chan float64)
-		ensNameChan  = make(chan string)
-		userChan     = make(chan database.User)
+		ethPrice        float64
+		totalETH        float64
+		nftsChan        = make(chan []opensea.OpenSeaAsset)
+		collectionsChan = make(chan []opensea.OpenSeaCollectionCollection)
+		ethPriceChan    = make(chan float64)
+		ensNameChan     = make(chan string)
+		userChan        = make(chan database.User)
 	)
 
 	// // Fetch the user's collections & NFTs from OpenSea
-	// go h.asyncGetOpenSeaCollections(address, w, collectionsChan)
-	// collections = <-collectionsChan
+	go h.asyncGetOpenSeaCollections(address, w, collectionsChan)
+	collections = <-collectionsChan
 
-	// go h.asyncGetOpenSeaAssets(address, w, nftsChan)
-	// nfts = <-nftsChan
+	go h.asyncGetOpenSeaAssets(address, w, nftsChan)
+	nfts = <-nftsChan
 
 	// Get ETH price
 	go h.asyncGetETHPrice(ethPriceChan)
@@ -302,22 +304,6 @@ func (h *Handler) asyncGetENSNameFromAddress(address string, rc chan string) {
 func (h *Handler) asyncGetUser(address string, rc chan database.User) {
 	// Fetch user from Firestore
 	var user database.User
-
-	// h.logger.Infow("debug", "address", address)
-	// docsnap, err := h.database.Collection("users").Doc(address).Get(h.ctx)
-	// if err != nil {
-	// 	h.logger.Infow("foo", "docsnap", docsnap, "err", err)
-	// 	h.logger.Error(err)
-	// }
-
-	// if docsnap.Exists() {
-	// 	err = docsnap.DataTo(&user)
-	// 	if err != nil {
-	// 		h.logger.Error(err)
-	// 	}
-	// } else {
-	// 	h.logger.Info("User not found in Firestore")
-	// }
 
 	docsnap, err := h.database.Collection("users").Doc(address).Get(h.ctx)
 	if err != nil {
