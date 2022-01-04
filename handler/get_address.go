@@ -54,15 +54,6 @@ type InfoReq struct {
 	SkipBQ  bool   `json:"skipBQ"`
 }
 
-// GetInfoResp is the response for the GET /info endpoint
-type GetInfoResp struct {
-	Collections      []Collection `json:"collections"`
-	UnrealizedBagETH float64      `json:"unrealizedBagETH"`
-	UnrealizedBagUSD float64      `json:"unrealizedBagUSD"`
-	Username         string       `json:"username"`
-	Photo            string       `json:"photo"`
-}
-
 type CollectionResp struct {
 	Name     string    `json:"name"`
 	Floor    float64   `json:"floor"`
@@ -75,6 +66,7 @@ type CollectionResp struct {
 
 // GetAddressResp is the response for the GET /v2/info endpoint
 type GetAddressResp struct {
+	Address     string           `json:"address"`
 	Collections []CollectionResp `json:"collections"`
 	TotalETH    float64          `json:"totalETH"`
 	ETHPrice    float64          `json:"ethPrice"`
@@ -111,9 +103,11 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		collections        = make([]opensea.OpenSeaCollectionCollection, 0)
 		nfts               = make([]opensea.OpenSeaAsset, 0)
 		collectionSlugDocs = make([]*firestore.DocumentRef, 0)
-		resp               = GetAddressResp{}
-		ethPrice           float64
-		totalETH           float64
+		resp               = GetAddressResp{
+			Address: address,
+		}
+		ethPrice float64
+		totalETH float64
 		// nftsChan           = make(chan []opensea.OpenSeaAsset)
 		// collectionsChan    = make(chan []opensea.OpenSeaCollectionCollection)
 		ethPriceChan = make(chan float64)
