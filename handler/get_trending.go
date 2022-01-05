@@ -13,8 +13,8 @@ import (
 )
 
 type GetTrendingResp struct {
-	TopHighestFloor []database.CollectionV2 `json:"topHighestFloor"`
-	TopWeeklyVolume []database.CollectionV2 `json:"topWeeklyVolume"`
+	TopHighestFloor []database.Collection `json:"topHighestFloor"`
+	TopWeeklyVolume []database.Collection `json:"topWeeklyVolume"`
 }
 
 func (h *Handler) getTrending(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +22,7 @@ func (h *Handler) getTrending(w http.ResponseWriter, r *http.Request) {
 		ctx                     = context.TODO()
 		resp                    = GetTrendingResp{}
 		collections             = h.database.Collection("collections")
-		highestFloorCollections = make([]database.CollectionV2, 0)
+		highestFloorCollections = make([]database.Collection, 0)
 		highestFloorCounter     = 0
 	)
 
@@ -51,7 +51,7 @@ func (h *Handler) getTrending(w http.ResponseWriter, r *http.Request) {
 
 		// Only add collections with a weekly volume of over 1 ETH
 		if sevenDayVolume > 1.0 {
-			highestFloorCollections = append(highestFloorCollections, database.CollectionV2{
+			highestFloorCollections = append(highestFloorCollections, database.Collection{
 				Name:           doc.Data()["name"].(string),
 				Slug:           doc.Data()["slug"].(string),
 				Thumb:          thumb,
@@ -96,7 +96,7 @@ func (h *Handler) getTrending(w http.ResponseWriter, r *http.Request) {
 			sevenDayVolume = 0.0
 		}
 
-		resp.TopWeeklyVolume = append(resp.TopWeeklyVolume, database.CollectionV2{
+		resp.TopWeeklyVolume = append(resp.TopWeeklyVolume, database.Collection{
 			Name:           doc.Data()["name"].(string),
 			Slug:           doc.Data()["slug"].(string),
 			Thumb:          thumb,

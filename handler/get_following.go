@@ -11,8 +11,8 @@ import (
 )
 
 type GetFollowingResp struct {
-	Collections []database.CollectionV2 `json:"collections"`
-	Addresses   []string                `json:"addresses"`
+	Collections []database.Collection `json:"collections"`
+	Addresses   []string              `json:"addresses"`
 }
 
 func (h *Handler) getFollowing(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +58,7 @@ func (h *Handler) getFollowing(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var db database.CollectionV2
+		var db database.Collection
 		if err := doc.DataTo(&db); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

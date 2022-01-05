@@ -155,7 +155,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var docSnapMap = make(map[string]database.CollectionV2)
+	var docSnapMap = make(map[string]database.Collection)
 	var collectionRespMap = make(map[string]CollectionResp)
 	for _, ds := range docsnaps {
 		if ds.Exists() {
@@ -172,7 +172,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 				NFTs:     h.getNFTsForCollection(ds.Ref.ID, nfts),
 			}
 			// This is for Firestore
-			docSnapMap[ds.Ref.ID] = database.CollectionV2{
+			docSnapMap[ds.Ref.ID] = database.Collection{
 				Floor:   floor,
 				Name:    ds.Data()["name"].(string),
 				Slug:    ds.Ref.ID,
