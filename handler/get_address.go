@@ -11,7 +11,6 @@ import (
 	"cloud.google.com/go/firestore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
-	"github.com/kr/pretty"
 	"github.com/mager/keiko/bigquery"
 	"github.com/mager/keiko/opensea"
 	"github.com/mager/keiko/utils"
@@ -192,10 +191,10 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 				go h.sweeper.AddCollection(collection.Slug)
 			}
 		}
+		resp.TotalETH = totalETH
 	} else {
 		resp.User = user
-
-		pretty.Print(user)
+		resp.Collections, resp.TotalETH = h.adaptWalletToCollectionResp(user.Wallet)
 	}
 
 	if !req.SkipBQ {
@@ -327,4 +326,75 @@ func (h *Handler) getUser(address string) (database.User, error) {
 	}
 
 	return user, nil
+}
+
+func (h *Handler) adaptWalletToCollectionResp(wallet database.Wallet) ([]CollectionResp, float64) {
+	var (
+		resp           = []CollectionResp{}
+		collections    = h.database.Collection("collections")
+		dbCollections  = []database.Collection{}
+		collectionDocs = make([]*firestore.DocumentRef, 0)
+		totalETH       float64
+	)
+
+	for _, collection := range wallet.Collections {
+		collectionDocs = append(collectionDocs, collections.Doc(collection.Slug))
+	}
+
+	// Fetch collections from Firestore
+	docsnaps, err := h.database.GetAll(h.ctx, collectionDocs)
+	if err != nil {
+		h.logger.Error(err)
+	}
+
+	h.logger.Infof("%d collections found in Firestore", len(docsnaps))
+	for _, docsnap := range docsnaps {
+		var collection database.Collection
+		err := docsnap.DataTo(&collection)
+		if err != nil {
+			h.logger.Error(err)
+		}
+		dbCollections = append(dbCollections, collection)
+	}
+
+	for _, c := range wallet.Collections {
+		floor := h.adaptFloor(dbCollections, c)
+		resp = append(resp, CollectionResp{
+			Name:  c.Name,
+			Slug:  c.Slug,
+			Thumb: c.ImageURL,
+			NFTs:  adaptWalletNFTsToCollectionRespNFTs(c.NFTs),
+			Floor: floor,
+		})
+		totalETH += float64(len(c.NFTs)) * floor
+	}
+
+	return resp, totalETH
+}
+
+func adaptWalletNFTsToCollectionRespNFTs(walletNFTs []database.WalletAsset) []NFT {
+	var resp = []NFT{}
+
+	for _, walletNFT := range walletNFTs {
+		resp = append(resp, NFT{
+			Name:     walletNFT.Name,
+			TokenID:  walletNFT.TokenID,
+			ImageURL: walletNFT.ImageURL,
+		})
+	}
+
+	return resp
+}
+
+func (h *Handler) adaptFloor(collections []database.Collection, wc database.WalletCollection) float64 {
+	var floor float64
+
+	for _, collection := range collections {
+		if collection.Slug == wc.Slug {
+			floor = collection.Floor
+			h.logger.Infow("Found floor for collection", "collection", collection.Slug, "floor", floor)
+		}
+	}
+
+	return floor
 }
