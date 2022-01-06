@@ -358,15 +358,17 @@ func (h *Handler) adaptWalletToCollectionResp(wallet database.Wallet) ([]Collect
 	}
 
 	for _, c := range wallet.Collections {
+		numOwned := len(c.NFTs)
 		floor := h.adaptFloor(dbCollections, c)
 		resp = append(resp, CollectionResp{
-			Name:  c.Name,
-			Slug:  c.Slug,
-			Thumb: c.ImageURL,
-			NFTs:  adaptWalletNFTsToCollectionRespNFTs(c.NFTs),
-			Floor: floor,
+			Name:     c.Name,
+			Slug:     c.Slug,
+			Thumb:    c.ImageURL,
+			NFTs:     adaptWalletNFTsToCollectionRespNFTs(c.NFTs),
+			Floor:    floor,
+			NumOwned: numOwned,
 		})
-		totalETH += float64(len(c.NFTs)) * floor
+		totalETH += float64(numOwned) * floor
 	}
 
 	return resp, totalETH
