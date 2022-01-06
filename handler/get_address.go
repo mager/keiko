@@ -11,6 +11,7 @@ import (
 	"cloud.google.com/go/firestore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
+	"github.com/kr/pretty"
 	"github.com/mager/keiko/bigquery"
 	"github.com/mager/keiko/opensea"
 	"github.com/mager/keiko/utils"
@@ -116,7 +117,6 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		collectionsChan = make(chan []opensea.OpenSeaCollectionCollection)
 		ethPriceChan    = make(chan float64)
 		ensNameChan     = make(chan string)
-		userChan        = make(chan database.User)
 	)
 
 	// Get ENS Name
@@ -127,70 +127,75 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		resp.ENSName = ensName
 	}
 
-	// // Fetch the user's collections & NFTs from OpenSea
-	go h.asyncGetOpenSeaCollections(address, w, collectionsChan)
-	collections = <-collectionsChan
-
-	go h.asyncGetOpenSeaAssets(address, w, nftsChan)
-	nfts = <-nftsChan
-
-	// Get ETH price
-	go h.asyncGetETHPrice(ethPriceChan)
-	ethPrice = <-ethPriceChan
-
-	// Fetch user
-	go h.asyncGetUser(address, userChan)
-	resp.User = <-userChan
-
-	var slugToOSCollectionMap = make(map[string]opensea.OpenSeaCollectionCollection)
-	for _, collection := range collections {
-		collectionSlugDocs = append(collectionSlugDocs, h.database.Collection("collections").Doc(collection.Slug))
-		slugToOSCollectionMap[collection.Slug] = collection
-	}
-
-	// Check if the user's collections are in our database
-	docsnaps, err := h.database.GetAll(h.ctx, collectionSlugDocs)
+	// Check if the user exists in the database first
+	user, err := h.getUser(address)
 	if err != nil {
-		h.logger.Error(err)
-		return
-	}
+		// // Fetch the user's collections & NFTs from OpenSea
+		go h.asyncGetOpenSeaCollections(address, w, collectionsChan)
+		collections = <-collectionsChan
 
-	var docSnapMap = make(map[string]database.Collection)
-	var collectionRespMap = make(map[string]CollectionResp)
-	for _, ds := range docsnaps {
-		if ds.Exists() {
-			numOwned := slugToOSCollectionMap[ds.Ref.ID].OwnedAssetCount
-			floor := ds.Data()["floor"].(float64)
-			// This is for the response
-			collectionRespMap[ds.Ref.ID] = CollectionResp{
-				Name:     ds.Data()["name"].(string),
-				Floor:    floor,
-				Slug:     ds.Ref.ID,
-				Updated:  ds.Data()["updated"].(time.Time),
-				Thumb:    slugToOSCollectionMap[ds.Ref.ID].ImageURL,
-				NumOwned: numOwned,
-				NFTs:     h.getNFTsForCollection(ds.Ref.ID, nfts),
-			}
-			// This is for Firestore
-			docSnapMap[ds.Ref.ID] = database.Collection{
-				Floor:   floor,
-				Name:    ds.Data()["name"].(string),
-				Slug:    ds.Ref.ID,
-				Updated: ds.Data()["updated"].(time.Time),
-			}
+		go h.asyncGetOpenSeaAssets(address, w, nftsChan)
+		nfts = <-nftsChan
 
-			totalETH += utils.RoundFloat(float64(numOwned)*floor, 4)
+		// Get ETH price
+		go h.asyncGetETHPrice(ethPriceChan)
+		ethPrice = <-ethPriceChan
+		resp.ETHPrice = ethPrice
+
+		var slugToOSCollectionMap = make(map[string]opensea.OpenSeaCollectionCollection)
+		for _, collection := range collections {
+			collectionSlugDocs = append(collectionSlugDocs, h.database.Collection("collections").Doc(collection.Slug))
+			slugToOSCollectionMap[collection.Slug] = collection
 		}
-	}
 
-	for _, collection := range collections {
-		// Check docSnapMap to see if collection slug is in there
-		if _, ok := docSnapMap[collection.Slug]; ok {
-			resp.Collections = append(resp.Collections, collectionRespMap[collection.Slug])
-		} else {
-			// Otherwise, add it to the database
-			go h.sweeper.AddCollection(collection.Slug)
+		// Check if the user's collections are in our database
+		docsnaps, err := h.database.GetAll(h.ctx, collectionSlugDocs)
+		if err != nil {
+			h.logger.Error(err)
+			return
 		}
+
+		var docSnapMap = make(map[string]database.Collection)
+		var collectionRespMap = make(map[string]CollectionResp)
+		for _, ds := range docsnaps {
+			if ds.Exists() {
+				numOwned := slugToOSCollectionMap[ds.Ref.ID].OwnedAssetCount
+				floor := ds.Data()["floor"].(float64)
+				// This is for the response
+				collectionRespMap[ds.Ref.ID] = CollectionResp{
+					Name:     ds.Data()["name"].(string),
+					Floor:    floor,
+					Slug:     ds.Ref.ID,
+					Updated:  ds.Data()["updated"].(time.Time),
+					Thumb:    slugToOSCollectionMap[ds.Ref.ID].ImageURL,
+					NumOwned: numOwned,
+					NFTs:     h.getNFTsForCollection(ds.Ref.ID, nfts),
+				}
+				// This is for Firestore
+				docSnapMap[ds.Ref.ID] = database.Collection{
+					Floor:   floor,
+					Name:    ds.Data()["name"].(string),
+					Slug:    ds.Ref.ID,
+					Updated: ds.Data()["updated"].(time.Time),
+				}
+
+				totalETH += utils.RoundFloat(float64(numOwned)*floor, 4)
+			}
+		}
+
+		for _, collection := range collections {
+			// Check docSnapMap to see if collection slug is in there
+			if _, ok := docSnapMap[collection.Slug]; ok {
+				resp.Collections = append(resp.Collections, collectionRespMap[collection.Slug])
+			} else {
+				// Otherwise, add it to the database
+				go h.sweeper.AddCollection(collection.Slug)
+			}
+		}
+	} else {
+		resp.User = user
+
+		pretty.Print(user)
 	}
 
 	if !req.SkipBQ {
@@ -204,12 +209,6 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(resp.Collections[:], func(i, j int) bool {
 		return resp.Collections[i].Floor > resp.Collections[j].Floor
 	})
-
-	resp.ETHPrice = ethPrice
-
-	resp.TotalETH = totalETH
-
-	// c.Set(address, resp, cache.DefaultExpiration)
 
 	json.NewEncoder(w).Encode(resp)
 }
@@ -307,13 +306,14 @@ func (h *Handler) asyncGetENSNameFromAddress(address string, rc chan string) {
 	rc <- domain
 }
 
-func (h *Handler) asyncGetUser(address string, rc chan database.User) {
+func (h *Handler) getUser(address string) (database.User, error) {
 	// Fetch user from Firestore
 	var user database.User
 
 	docsnap, err := h.database.Collection("users").Doc(address).Get(h.ctx)
 	if err != nil {
 		h.logger.Error(err)
+		return user, err
 	}
 
 	if docsnap.Exists() {
@@ -323,7 +323,8 @@ func (h *Handler) asyncGetUser(address string, rc chan database.User) {
 		}
 	} else {
 		h.logger.Info("User not found in Firestore")
+		return user, err
 	}
 
-	rc <- user
+	return user, nil
 }
