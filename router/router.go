@@ -18,7 +18,7 @@ func ProvideRouter(lc fx.Lifecycle, logger *zap.SugaredLogger) *mux.Router {
 	lc.Append(
 		fx.Hook{
 			OnStart: func(context.Context) error {
-				addr := ":8080"
+				addr := ":8081"
 				logger.Info("Listening on ", addr)
 
 				go http.ListenAndServe(addr, router)

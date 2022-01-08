@@ -43,7 +43,8 @@ func (h *Handler) getStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set total
-	resp.Total = len(docs)
+	var total = len(docs)
+	resp.Total = total
 
 	// Set last updated
 	resp.Updated = updated
