@@ -394,7 +394,6 @@ func (h *Handler) adaptFloor(collections []database.Collection, wc database.Wall
 	for _, collection := range collections {
 		if collection.Slug == wc.Slug {
 			floor = collection.Floor
-			h.logger.Infow("Found floor for collection", "collection", collection.Slug, "floor", floor)
 		}
 	}
 
