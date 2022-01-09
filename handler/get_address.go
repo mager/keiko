@@ -71,7 +71,18 @@ type GetAddressResp struct {
 	TotalETH    float64          `json:"totalETH"`
 	ETHPrice    float64          `json:"ethPrice"`
 	ENSName     string           `json:"ensName"`
-	User        database.User    `json:"user"`
+	User        UserResp         `json:"user"`
+}
+
+type UserResp struct {
+	Name        string   `json:"name"`
+	Photo       bool     `json:"photo"`
+	ENSName     string   `json:"ensName"`
+	Collections []string `json:"collections"`
+	Slug        string   `json:"slug"`
+	Twitter     string   `json:"twitter"`
+	OpenSea     string   `json:"openSea"`
+	IsWhale     bool     `json:"isWhale"`
 }
 
 // getAddress is the route handler for the GET /address/{address} endpoint
@@ -193,7 +204,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		}
 		resp.TotalETH = totalETH
 	} else {
-		resp.User = user
+		resp.User = h.adaptUser(user)
 		resp.Collections, resp.TotalETH = h.adaptWalletToCollectionResp(user.Wallet)
 	}
 
@@ -398,4 +409,17 @@ func (h *Handler) adaptFloor(collections []database.Collection, wc database.Wall
 	}
 
 	return floor
+}
+
+func (h *Handler) adaptUser(user database.User) UserResp {
+	return UserResp{
+		Name:        user.Name,
+		Photo:       user.Photo,
+		ENSName:     user.ENSName,
+		Collections: user.Collections,
+		Slug:        user.Slug,
+		Twitter:     user.Twitter,
+		OpenSea:     user.OpenSea,
+		IsWhale:     user.IsWhale,
+	}
 }
