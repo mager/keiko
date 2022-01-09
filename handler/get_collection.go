@@ -147,7 +147,6 @@ func (h *Handler) reduceStats(stats []BQStat) []BQStat {
 		if len(reducedByDate) == 0 {
 			reducedByDate = append(reducedByDate, stat)
 		} else {
-			h.logger.Info(stat)
 			if stat.Timestamp.Day() != reducedByDate[len(reducedByDate)-1].Timestamp.Day() {
 				reducedByDate = append(reducedByDate, stat)
 			}
