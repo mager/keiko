@@ -139,8 +139,13 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the user exists in the database first
 	user, err := h.getUser(address)
-	if err != nil {
-		// // Fetch the user's collections & NFTs from OpenSea
+	if err == nil && user.ShouldIndex {
+		resp.User = h.adaptUser(user)
+		h.logger.Info("User found in database", "address", address)
+		resp.Collections, resp.TotalETH = h.adaptWalletToCollectionResp(user.Wallet)
+	} else {
+
+		// Fetch the user's collections & NFTs from OpenSea
 		go h.asyncGetOpenSeaCollections(address, w, collectionsChan)
 		collections = <-collectionsChan
 
@@ -203,9 +208,6 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		resp.TotalETH = totalETH
-	} else {
-		resp.User = h.adaptUser(user)
-		resp.Collections, resp.TotalETH = h.adaptWalletToCollectionResp(user.Wallet)
 	}
 
 	if !req.SkipBQ {
@@ -351,6 +353,9 @@ func (h *Handler) adaptWalletToCollectionResp(wallet database.Wallet) ([]Collect
 	for _, collection := range wallet.Collections {
 		collectionDocs = append(collectionDocs, collections.Doc(collection.Slug))
 	}
+
+	h.logger.Info("adaptWalletToCollectionResp")
+	h.logger.Info(len(collectionDocs))
 
 	// Fetch collections from Firestore
 	docsnaps, err := h.database.GetAll(h.ctx, collectionDocs)
