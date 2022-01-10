@@ -6,12 +6,17 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/firestore"
-	"github.com/mager/sweeper/database"
 	"google.golang.org/api/iterator"
 )
 
 type GetFrensResp struct {
-	Users []database.User `json:"users"`
+	Users []Fren `json:"users"`
+}
+
+type Fren struct {
+	Name    string `json:"name"`
+	Photo   bool   `json:"photo"`
+	ENSName string `json:"ensName"`
 }
 
 func (h *Handler) getFrens(w http.ResponseWriter, r *http.Request) {
@@ -36,13 +41,13 @@ func (h *Handler) getFrens(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var db database.User
-		if err := doc.DataTo(&db); err != nil {
+		var fren Fren
+		if err := doc.DataTo(&fren); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		resp.Users = append(resp.Users, db)
+		resp.Users = append(resp.Users, fren)
 	}
 
 	json.NewEncoder(w).Encode(resp)
