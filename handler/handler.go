@@ -83,6 +83,10 @@ func (h *Handler) registerRoutes() {
 	h.router.HandleFunc("/following", h.getFollowing).
 		Methods("GET")
 
+		// Frens
+	h.router.HandleFunc("/frens", h.getFrens).
+		Methods("GET")
+
 	// Collections
 	h.router.HandleFunc("/collection/{slug}", h.getCollection).
 		Methods("GET")
