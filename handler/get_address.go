@@ -354,9 +354,6 @@ func (h *Handler) adaptWalletToCollectionResp(wallet database.Wallet) ([]Collect
 		collectionDocs = append(collectionDocs, collections.Doc(collection.Slug))
 	}
 
-	h.logger.Info("adaptWalletToCollectionResp")
-	h.logger.Info(len(collectionDocs))
-
 	// Fetch collections from Firestore
 	docsnaps, err := h.database.GetAll(h.ctx, collectionDocs)
 	if err != nil {
@@ -432,8 +429,9 @@ func (h *Handler) adaptUser(user database.User) UserResp {
 // New
 func (h *Handler) getNFTCollection(ctx context.Context, address string) []CollectionResp {
 	var (
-		openseaAssets  = make([]opensea.OpenSeaAssetV2, 0)
-		collectionsMap = make(map[string]CollectionResp)
+		openseaAssets      = make([]opensea.OpenSeaAssetV2, 0)
+		collectionsMap     = make(map[string]CollectionResp)
+		collectionSlugDocs = make([]*firestore.DocumentRef, 0)
 	)
 
 	// Fetch the user's collections & NFTs from OpenSea
@@ -471,6 +469,37 @@ func (h *Handler) getNFTCollection(ctx context.Context, address string) []Collec
 	var collections = make([]CollectionResp, 0)
 	for _, collection := range collectionsMap {
 		collections = append(collections, collection)
+		collectionSlugDocs = append(collectionSlugDocs, h.database.Collection("collections").Doc(collection.Slug))
+	}
+
+	// Add the floor prices
+	var (
+		slugToFloorMap = make(map[string]float64)
+		slugsToAdd     = make([]string, 0)
+	)
+
+	docsnaps, err := h.database.GetAll(h.ctx, collectionSlugDocs)
+	if err != nil {
+		h.logger.Error(err)
+	}
+
+	for _, docsnap := range docsnaps {
+		if !docsnap.Exists() {
+			h.logger.Infow("Collection not found in Firestore", "collection", docsnap.Ref.ID)
+			slugsToAdd = append(slugsToAdd, docsnap.Ref.ID)
+		} else {
+			slugToFloorMap[docsnap.Ref.ID] = docsnap.Data()["floor"].(float64)
+		}
+	}
+
+	// Call sweeper to update add new collections
+	if len(slugsToAdd) > 0 {
+		go h.sweeper.AddCollections(slugsToAdd)
+	}
+
+	for i, collection := range collections {
+		collection.Floor = slugToFloorMap[collection.Slug]
+		collections[i] = collection
 	}
 
 	return collections
