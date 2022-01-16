@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
 )
 
@@ -15,7 +14,9 @@ type GetFrensResp struct {
 
 type Fren struct {
 	Name    string `json:"name"`
+	Address string `json:"address"`
 	Photo   bool   `json:"photo"`
+	Slug    string `json:"slug"`
 	ENSName string `json:"ensName"`
 }
 
@@ -27,7 +28,7 @@ func (h *Handler) getFrens(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Fetch the list of collections that the user follows
-	q := users.Where("isWhale", "==", true).OrderBy("name", firestore.Asc)
+	q := users.Where("isWhale", "==", true)
 	iter := q.Documents(ctx)
 	defer iter.Stop()
 
@@ -46,6 +47,8 @@ func (h *Handler) getFrens(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		fren.Address = doc.Ref.ID
 
 		resp.Users = append(resp.Users, fren)
 	}
