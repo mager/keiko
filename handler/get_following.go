@@ -7,7 +7,6 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/mager/sweeper/database"
-	"google.golang.org/api/iterator"
 )
 
 type GetFollowingResp struct {
@@ -43,28 +42,28 @@ func (h *Handler) getFollowing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Make a slice of document references
+	var docRefs []*firestore.DocumentRef
+	for _, collection := range db.Collections {
+		docRefs = append(docRefs, collections.Doc(collection))
+	}
+
 	// Fetch the list of collections that the user follows
-	q := collections.Where("slug", "in", db.Collections).OrderBy("floor", firestore.Desc)
-	iter := q.Documents(ctx)
-	defer iter.Stop()
+	docsnaps, err := h.database.GetAll(ctx, docRefs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	for {
-		doc, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
+	// Make a slice of collections
+	for _, docsnap := range docsnaps {
+		var collection database.Collection
+		if err := docsnap.DataTo(&collection); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		var db database.Collection
-		if err := doc.DataTo(&db); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		resp.Collections = append(resp.Collections, db)
+		resp.Collections = append(resp.Collections, collection)
 	}
 
 	json.NewEncoder(w).Encode(resp)
