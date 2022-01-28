@@ -6,6 +6,7 @@ import (
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/firestore"
 	"github.com/gorilla/mux"
+	"github.com/mager/go-opensea/opensea"
 	bq "github.com/mager/keiko/bigquery"
 	cs "github.com/mager/keiko/coinstats"
 	"github.com/mager/keiko/config"
@@ -14,7 +15,7 @@ import (
 	"github.com/mager/keiko/handler"
 	"github.com/mager/keiko/infura"
 	"github.com/mager/keiko/logger"
-	"github.com/mager/keiko/opensea"
+	os "github.com/mager/keiko/opensea"
 	"github.com/mager/keiko/router"
 	"github.com/mager/keiko/sweeper"
 	"go.uber.org/fx"
@@ -31,7 +32,7 @@ func main() {
 			ethscan.Options,
 			infura.Options,
 			logger.Options,
-			opensea.Options,
+			os.Options,
 			router.Options,
 			sweeper.Options,
 		),
@@ -48,7 +49,7 @@ func Register(
 	database *firestore.Client,
 	infuraClient *infura.InfuraClient,
 	logger *zap.SugaredLogger,
-	openSeaClient opensea.OpenSeaClient,
+	openSeaClient *opensea.OpenSeaClient,
 	router *mux.Router,
 	sweeper sweeper.SweeperClient,
 ) {

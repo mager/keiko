@@ -12,10 +12,10 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gorilla/mux"
+	"github.com/mager/go-opensea/opensea"
 	"github.com/mager/keiko/coinstats"
 	"github.com/mager/keiko/etherscan"
 	"github.com/mager/keiko/infura"
-	"github.com/mager/keiko/opensea"
 	"github.com/mager/keiko/sweeper"
 	"github.com/mager/keiko/utils"
 	"go.uber.org/zap"
@@ -26,7 +26,7 @@ type Handler struct {
 	ctx             context.Context
 	logger          *zap.SugaredLogger
 	router          *mux.Router
-	os              opensea.OpenSeaClient
+	os              *opensea.OpenSeaClient
 	bq              *bigquery.Client
 	cs              coinstats.CoinstatsClient
 	database        *firestore.Client
@@ -40,7 +40,7 @@ func New(
 	ctx context.Context,
 	logger *zap.SugaredLogger,
 	router *mux.Router,
-	os opensea.OpenSeaClient,
+	os *opensea.OpenSeaClient,
 	bq *bigquery.Client,
 	cs coinstats.CoinstatsClient,
 	database *firestore.Client,

@@ -11,6 +11,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.15
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/mager/go-opensea v0.1.3
 	github.com/mager/sweeper v0.0.0-20220110012853-a8d505f7affa
 	github.com/nanmu42/etherscan-api v1.6.0
 	github.com/wealdtech/go-ens/v3 v3.5.1

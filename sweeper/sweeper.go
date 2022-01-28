@@ -78,8 +78,7 @@ func (s *SweeperClient) AddCollection(slug string) bool {
 
 // AddCollections adds multiple collection to the database
 func (s *SweeperClient) AddCollections(slugs []string) bool {
-	u, err := url.Parse("http://localhost:8080/update/collections")
-	// u, err := url.Parse("https://sweeper.floor.report/update/collections")
+	u, err := url.Parse("https://sweeper.floor.report/update/collections")
 	if err != nil {
 		s.logger.Error(err)
 		return false

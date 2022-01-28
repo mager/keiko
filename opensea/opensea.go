@@ -9,7 +9,9 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/mager/go-opensea/opensea"
 	"github.com/mager/keiko/config"
+
 	"go.uber.org/zap"
 )
 
@@ -162,20 +164,9 @@ var (
 )
 
 // ProvideOpenSea provides an HTTP client
-func ProvideOpenSea(cfg config.Config, logger *zap.SugaredLogger) OpenSeaClient {
-	tr := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    30 * time.Second,
-		DisableCompression: true,
-	}
-
-	return OpenSeaClient{
-		httpClient: &http.Client{
-			Transport: tr,
-		},
-		apiKey: cfg.OpenSeaAPIKey,
-		logger: logger,
-	}
+func ProvideOpenSea(cfg config.Config) *opensea.OpenSeaClient {
+	client := opensea.NewOpenSeaClient(cfg.OpenSeaAPIKey)
+	return client
 }
 
 var Options = ProvideOpenSea

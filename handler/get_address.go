@@ -3,17 +3,15 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"net/url"
 	"sort"
 	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
+	"github.com/mager/go-opensea/opensea"
 	"github.com/mager/keiko/bigquery"
-	"github.com/mager/keiko/opensea"
 	"github.com/mager/sweeper/database"
 	ens "github.com/wealdtech/go-ens/v3"
 )
@@ -119,14 +117,6 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 			Address: address,
 		}
 		ensNameChan = make(chan string)
-		// collections        = make([]opensea.OpenSeaCollectionCollection, 0)
-		// nfts               = make([]opensea.OpenSeaAsset, 0)
-		// collectionSlugDocs = make([]*firestore.DocumentRef, 0)
-		// ethPrice        float64
-		// totalETH        float64
-		// nftsChan        = make(chan []opensea.OpenSeaAsset)
-		// collectionsChan = make(chan []opensea.OpenSeaCollectionCollection)
-		// ethPriceChan    = make(chan float64)
 	)
 
 	// Get ENS Name
@@ -145,69 +135,6 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		resp.Collections, resp.TotalETH = h.adaptWalletToCollectionResp(user.Wallet)
 	} else {
 		resp.Collections = h.getNFTCollection(r.Context(), address)
-		// // Fetch the user's collections & NFTs from OpenSea
-		// go h.asyncGetOpenSeaCollections(address, w, collectionsChan)
-		// collections = <-collectionsChan
-
-		// go h.asyncGetOpenSeaAssets(address, w, nftsChan)
-		// nfts = <-nftsChan
-
-		// // Get ETH price
-		// go h.asyncGetETHPrice(ethPriceChan)
-		// ethPrice = <-ethPriceChan
-		// resp.ETHPrice = ethPrice
-
-		// var slugToOSCollectionMap = make(map[string]opensea.OpenSeaCollectionCollection)
-		// for _, collection := range collections {
-		// 	collectionSlugDocs = append(collectionSlugDocs, h.database.Collection("collections").Doc(collection.Slug))
-		// 	slugToOSCollectionMap[collection.Slug] = collection
-		// }
-
-		// // Check if the user's collections are in our database
-		// docsnaps, err := h.database.GetAll(h.ctx, collectionSlugDocs)
-		// if err != nil {
-		// 	h.logger.Error(err)
-		// 	return
-		// }
-
-		// var docSnapMap = make(map[string]database.Collection)
-		// var collectionRespMap = make(map[string]CollectionResp)
-		// for _, ds := range docsnaps {
-		// 	if ds.Exists() {
-		// 		numOwned := slugToOSCollectionMap[ds.Ref.ID].OwnedAssetCount
-		// 		floor := ds.Data()["floor"].(float64)
-		// 		// This is for the response
-		// 		collectionRespMap[ds.Ref.ID] = CollectionResp{
-		// 			Name:     ds.Data()["name"].(string),
-		// 			Floor:    floor,
-		// 			Slug:     ds.Ref.ID,
-		// 			Updated:  ds.Data()["updated"].(time.Time),
-		// 			Thumb:    slugToOSCollectionMap[ds.Ref.ID].ImageURL,
-		// 			NumOwned: numOwned,
-		// 			NFTs:     h.getNFTsForCollection(ds.Ref.ID, nfts),
-		// 		}
-		// 		// This is for Firestore
-		// 		docSnapMap[ds.Ref.ID] = database.Collection{
-		// 			Floor:   floor,
-		// 			Name:    ds.Data()["name"].(string),
-		// 			Slug:    ds.Ref.ID,
-		// 			Updated: ds.Data()["updated"].(time.Time),
-		// 		}
-
-		// 		totalETH += utils.RoundFloat(float64(numOwned)*floor, 4)
-		// 	}
-		// }
-
-		// for _, collection := range collections {
-		// 	// Check docSnapMap to see if collection slug is in there
-		// 	if _, ok := docSnapMap[collection.Slug]; ok {
-		// 		resp.Collections = append(resp.Collections, collectionRespMap[collection.Slug])
-		// 	} else {
-		// 		// Otherwise, add it to the database
-		// 		go h.sweeper.AddCollection(collection.Slug)
-		// 	}
-		// }
-		// resp.TotalETH = totalETH
 	}
 
 	if !req.SkipBQ {
@@ -223,89 +150,6 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	})
 
 	json.NewEncoder(w).Encode(resp)
-}
-
-func (h *Handler) getNFTsForCollection(slug string, nfts []opensea.OpenSeaAsset) []NFT {
-	var result []NFT
-	for _, nft := range nfts {
-		if nft.Collection.Slug == slug {
-			result = append(result, NFT{
-				Name:     nft.Name,
-				TokenID:  nft.TokenID,
-				ImageURL: nft.ImageThumbnailURL,
-				Traits:   getNFTTraits(nft),
-			})
-		}
-	}
-	return result
-}
-
-func getNFTTraits(asset opensea.OpenSeaAsset) []NFTTrait {
-	var result []NFTTrait
-	if len(asset.Traits) == 0 {
-		return result
-	}
-	for _, trait := range asset.Traits {
-		traitValueStr := getNFTTraitValue(trait.Value)
-		nftTrait := NFTTrait{
-			Name:       trait.TraitType,
-			Value:      traitValueStr,
-			OpenSeaURL: getOpenSeaTraitURL(asset, trait),
-		}
-		result = append(result, nftTrait)
-	}
-	return result
-}
-
-func getNFTTraitValue(t interface{}) string {
-	switch t.(type) {
-	case string:
-		return t.(string)
-	case int:
-		return fmt.Sprintf("%d", t.(int))
-	case float64:
-		return fmt.Sprintf("%f", t.(float64))
-	default:
-		return ""
-	}
-}
-
-func getOpenSeaTraitURL(asset opensea.OpenSeaAsset, trait opensea.OpenSeaAssetTrait) string {
-	return fmt.Sprintf(
-		"https://opensea.io/collection/%s?search[stringTraits][0][name]=%s&search[stringTraits][0][values][0]=%s",
-		asset.Collection.Slug,
-		url.QueryEscape(trait.TraitType),
-		url.QueryEscape(getNFTTraitValue(trait.Value)),
-	)
-}
-
-// asyncGetOpenSeaCollections gets the collections from OpenSea
-func (h *Handler) asyncGetOpenSeaCollections(address string, w http.ResponseWriter, rc chan []opensea.OpenSeaCollectionCollection) {
-	collections, err := h.os.GetAllCollectionsForAddress(address)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	rc <- collections
-}
-
-// asyncGetOpenSeaAssets gets the assets for the given address
-func (h *Handler) asyncGetOpenSeaAssets(address string, w http.ResponseWriter, rc chan []opensea.OpenSeaAssetV2) {
-	nfts, err := h.os.GetAllAssetsForAddressV2(address)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	rc <- nfts
-}
-
-// asyncGetETHPrice gets the ETH price from the ETH price API
-func (h *Handler) asyncGetETHPrice(rc chan float64) {
-	rc <- h.cs.GetETHPrice()
 }
 
 func (h *Handler) asyncGetENSNameFromAddress(address string, rc chan string) {
@@ -429,13 +273,17 @@ func (h *Handler) adaptUser(user database.User) UserResp {
 // New
 func (h *Handler) getNFTCollection(ctx context.Context, address string) []CollectionResp {
 	var (
-		openseaAssets      = make([]opensea.OpenSeaAssetV2, 0)
+		openseaAssets      = make([]opensea.Asset, 0)
 		collectionsMap     = make(map[string]CollectionResp)
 		collectionSlugDocs = make([]*firestore.DocumentRef, 0)
 	)
 
 	// Fetch the user's collections & NFTs from OpenSea
-	openseaAssets = h.getOpenSeaAssets(address)
+	openseaAssets, err := h.os.GetAssets(address)
+	if err != nil {
+		h.logger.Error(err)
+		return []CollectionResp{}
+	}
 
 	// Create a list of wallet collections
 	for _, asset := range openseaAssets {
@@ -503,15 +351,4 @@ func (h *Handler) getNFTCollection(ctx context.Context, address string) []Collec
 	}
 
 	return collections
-}
-
-// getOpenSeaAssets gets the assets for the given address
-func (h *Handler) getOpenSeaAssets(address string) []opensea.OpenSeaAssetV2 {
-	assets, err := h.os.GetAllAssetsForAddressV2(address)
-
-	if err != nil {
-		h.logger.Error(err)
-	}
-
-	return assets
 }
