@@ -10,7 +10,6 @@ import (
 	"cloud.google.com/go/bigquery"
 	"github.com/gorilla/mux"
 	"github.com/mager/keiko/constants"
-	"github.com/mager/keiko/opensea"
 	"github.com/mager/keiko/utils"
 	"github.com/mager/sweeper/database"
 	"google.golang.org/api/iterator"
@@ -26,15 +25,15 @@ type Stat struct {
 }
 
 type GetCollectionResp struct {
-	Name              string                    `json:"name"`
-	Slug              string                    `json:"slug"`
-	Floor             float64                   `json:"floor"`
-	Updated           time.Time                 `json:"updated"`
-	Thumb             string                    `json:"thumb"`
-	OpenSeaCollection opensea.OpenSeaCollection `json:"opensea_collection"`
-	Stats             []Stat                    `json:"stats"`
-	IsFollowing       bool                      `json:"isFollowing"`
-	Collection        database.Collection       `json:"collection"`
+	Name        string              `json:"name"`
+	Slug        string              `json:"slug"`
+	Floor       float64             `json:"floor"`
+	Updated     time.Time           `json:"updated"`
+	Thumb       string              `json:"thumb"`
+	Stats       []Stat              `json:"stats"`
+	IsFollowing bool                `json:"isFollowing"`
+	Collection  database.Collection `json:"collection"`
+	Contract    database.Contract   `json:"contract"`
 }
 
 // getCollection is the route handler for the GET /collection/{slug} endpoint
@@ -44,6 +43,7 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 		resp        = GetCollectionResp{}
 		collections = h.database.Collection("collections")
 		users       = h.database.Collection("users")
+		contracts   = h.database.Collection("contracts")
 		address     = r.Header.Get("X-Address")
 		slug        = mux.Vars(r)["slug"]
 		stats       = make([]BQStat, 0)
@@ -117,6 +117,24 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 				resp.IsFollowing = true
 			}
 		}
+	}
+
+	// BETA: Show contract for Proof Collective
+	if slug == "proof-collective" {
+		c := contracts.Doc("proof-collective")
+		docsnap, err := c.Get(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var contract database.Contract
+		if err := docsnap.DataTo(&contract); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		resp.Contract = contract
 	}
 
 	json.NewEncoder(w).Encode(resp)
