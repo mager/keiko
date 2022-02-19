@@ -102,7 +102,7 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	resp.Stats = h.adaptStats(stats)
 
 	// Check if the user is following the collection
-	if address != "" || address != constants.DefaultAddress {
+	if address != constants.DefaultAddress {
 		var db database.User
 		docsnap, err := users.Doc(address).Get(ctx)
 		if err != nil {
