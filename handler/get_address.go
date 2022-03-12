@@ -139,7 +139,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 
 	if !req.SkipBQ {
 		bigquery.RecordRequestInBigQuery(
-			h.bq.DatasetInProject("floor-report-327113", "info"),
+			h.bqClient.DatasetInProject("floor-report-327113", "info"),
 			h.logger,
 			address,
 		)
@@ -166,7 +166,7 @@ func (h *Handler) getUser(address string) (database.User, error) {
 	// Fetch user from Firestore
 	var user database.User
 
-	docsnap, err := h.database.Collection("users").Doc(address).Get(h.ctx)
+	docsnap, err := h.dbClient.Client.Collection("users").Doc(address).Get(h.ctx)
 	if err != nil {
 		h.logger.Error(err)
 		return user, err
@@ -188,7 +188,7 @@ func (h *Handler) getUser(address string) (database.User, error) {
 func (h *Handler) adaptWalletToCollectionResp(wallet database.Wallet) ([]CollectionResp, float64) {
 	var (
 		resp           = []CollectionResp{}
-		collections    = h.database.Collection("collections")
+		collections    = h.dbClient.Client.Collection("collections")
 		dbCollections  = []database.Collection{}
 		collectionDocs = make([]*firestore.DocumentRef, 0)
 		totalETH       float64
@@ -199,7 +199,7 @@ func (h *Handler) adaptWalletToCollectionResp(wallet database.Wallet) ([]Collect
 	}
 
 	// Fetch collections from Firestore
-	docsnaps, err := h.database.GetAll(h.ctx, collectionDocs)
+	docsnaps, err := h.dbClient.Client.GetAll(h.ctx, collectionDocs)
 	if err != nil {
 		h.logger.Error(err)
 	}
@@ -317,7 +317,7 @@ func (h *Handler) getNFTCollection(ctx context.Context, address string) []Collec
 	var collections = make([]CollectionResp, 0)
 	for _, collection := range collectionsMap {
 		collections = append(collections, collection)
-		collectionSlugDocs = append(collectionSlugDocs, h.database.Collection("collections").Doc(collection.Slug))
+		collectionSlugDocs = append(collectionSlugDocs, h.dbClient.Client.Collection("collections").Doc(collection.Slug))
 	}
 
 	// Add the floor prices
@@ -326,7 +326,7 @@ func (h *Handler) getNFTCollection(ctx context.Context, address string) []Collec
 		slugsToAdd     = make([]string, 0)
 	)
 
-	docsnaps, err := h.database.GetAll(h.ctx, collectionSlugDocs)
+	docsnaps, err := h.dbClient.Client.GetAll(h.ctx, collectionSlugDocs)
 	if err != nil {
 		h.logger.Error(err)
 	}

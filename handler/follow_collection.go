@@ -19,7 +19,7 @@ func (h *Handler) followCollection(w http.ResponseWriter, r *http.Request) {
 		ctx     = context.TODO()
 		err     error
 		resp    = FollowCollectionResp{}
-		users   = h.database.Collection("users")
+		users   = h.dbClient.Client.Collection("users")
 		address = r.Header.Get("X-Address")
 		slug    = mux.Vars(r)["slug"]
 		db      database.User

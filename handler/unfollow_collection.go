@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/kr/pretty"
 	"github.com/mager/keiko/utils"
 	"github.com/mager/sweeper/database"
 )
@@ -19,11 +20,13 @@ func (h *Handler) unfollowCollection(w http.ResponseWriter, r *http.Request) {
 		ctx     = context.TODO()
 		err     error
 		resp    = UnfollowCollectionResp{}
-		users   = h.database.Collection("users")
+		users   = h.dbClient.Client.Collection("users")
 		address = r.Header.Get("X-Address")
 		slug    = mux.Vars(r)["slug"]
 		db      database.User
 	)
+
+	pretty.Print(r.Header)
 
 	if address == "" {
 		http.Error(w, "X-Address is required", http.StatusBadRequest)

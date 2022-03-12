@@ -22,7 +22,7 @@ type NewUserResp struct {
 func (h *Handler) newUser(w http.ResponseWriter, r *http.Request) {
 	var (
 		req     NewUserReq
-		users   = h.database.Collection("users")
+		users   = h.dbClient.Client.Collection("users")
 		resp    = NewUserResp{}
 		address = r.Header.Get("X-Address")
 	)

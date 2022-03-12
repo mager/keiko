@@ -18,8 +18,8 @@ func (h *Handler) getFollowing(w http.ResponseWriter, r *http.Request) {
 	var (
 		ctx         = context.TODO()
 		resp        = GetFollowingResp{}
-		users       = h.database.Collection("users")
-		collections = h.database.Collection("collections")
+		users       = h.dbClient.Client.Collection("users")
+		collections = h.dbClient.Client.Collection("collections")
 		address     = r.Header.Get("X-Address")
 	)
 
@@ -49,7 +49,7 @@ func (h *Handler) getFollowing(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch the list of collections that the user follows
-	docsnaps, err := h.database.GetAll(ctx, docRefs)
+	docsnaps, err := h.dbClient.Client.GetAll(ctx, docRefs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -2,15 +2,15 @@ package main
 
 import (
 	"context"
+	"net/http"
 
 	"cloud.google.com/go/bigquery"
-	"cloud.google.com/go/firestore"
 	"github.com/gorilla/mux"
 	"github.com/mager/go-opensea/opensea"
 	bq "github.com/mager/keiko/bigquery"
 	cs "github.com/mager/keiko/coinstats"
 	"github.com/mager/keiko/config"
-	"github.com/mager/keiko/database"
+	db "github.com/mager/keiko/database"
 	ethscan "github.com/mager/keiko/etherscan"
 	"github.com/mager/keiko/handler"
 	"github.com/mager/keiko/infura"
@@ -28,7 +28,7 @@ func main() {
 			bq.Options,
 			config.Options,
 			cs.Options,
-			database.Options,
+			db.Options,
 			ethscan.Options,
 			infura.Options,
 			logger.Options,
@@ -42,11 +42,11 @@ func main() {
 
 func Register(
 	lc fx.Lifecycle,
-	bq *bigquery.Client,
+	bqClient *bigquery.Client,
 	cfg config.Config,
 	cs cs.CoinstatsClient,
 	etherscanClient *ethscan.EtherscanClient,
-	database *firestore.Client,
+	dbClient *db.DatabaseClient,
 	infuraClient *infura.InfuraClient,
 	logger *zap.SugaredLogger,
 	openSeaClient *opensea.OpenSeaClient,
@@ -54,7 +54,20 @@ func Register(
 	sweeper sweeper.SweeperClient,
 ) {
 	// TODO: Remove global context
-	var ctx = context.Background()
+	ctx := context.Background()
+
+	lc.Append(
+		fx.Hook{
+			OnStart: func(context.Context) error {
+				addr := ":8081"
+				logger.Info("Listening on ", addr)
+
+				go http.ListenAndServe(addr, router)
+
+				return nil
+			},
+		},
+	)
 
 	// Route handler
 	handler.New(
@@ -62,9 +75,9 @@ func Register(
 		logger,
 		router,
 		openSeaClient,
-		bq,
+		bqClient,
 		cs,
-		database,
+		dbClient,
 		infuraClient,
 		etherscanClient,
 		sweeper,

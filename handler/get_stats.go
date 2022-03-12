@@ -21,7 +21,7 @@ func (h *Handler) getStats(w http.ResponseWriter, r *http.Request) {
 		ctx         = context.TODO()
 		resp        = StatsResp{}
 		docs        = make([]*firestore.DocumentRef, 0)
-		collections = h.database.Collection("collections")
+		collections = h.dbClient.Client.Collection("collections")
 		updated     = time.Time{}
 	)
 

@@ -2,22 +2,15 @@ package handler
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"net/http"
 
 	"cloud.google.com/go/bigquery"
-	"cloud.google.com/go/firestore"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gorilla/mux"
 	"github.com/mager/go-opensea/opensea"
 	"github.com/mager/keiko/coinstats"
+	"github.com/mager/keiko/database"
 	"github.com/mager/keiko/etherscan"
 	"github.com/mager/keiko/infura"
 	"github.com/mager/keiko/sweeper"
-	"github.com/mager/keiko/utils"
 	"go.uber.org/zap"
 )
 
@@ -27,9 +20,9 @@ type Handler struct {
 	logger          *zap.SugaredLogger
 	router          *mux.Router
 	os              *opensea.OpenSeaClient
-	bq              *bigquery.Client
+	bqClient        *bigquery.Client
 	cs              coinstats.CoinstatsClient
-	database        *firestore.Client
+	dbClient        *database.DatabaseClient
 	infuraClient    *infura.InfuraClient
 	etherscanClient *etherscan.EtherscanClient
 	sweeper         sweeper.SweeperClient
@@ -41,9 +34,9 @@ func New(
 	logger *zap.SugaredLogger,
 	router *mux.Router,
 	os *opensea.OpenSeaClient,
-	bq *bigquery.Client,
+	bqClient *bigquery.Client,
 	cs coinstats.CoinstatsClient,
-	database *firestore.Client,
+	dbClient *database.DatabaseClient,
 	infuraClient *infura.InfuraClient,
 	etherscanClient *etherscan.EtherscanClient,
 	sweeper sweeper.SweeperClient,
@@ -53,15 +46,14 @@ func New(
 		logger,
 		router,
 		os,
-		bq,
+		bqClient,
 		cs,
-		database,
+		dbClient,
 		infuraClient,
 		etherscanClient,
 		sweeper,
 	}
 	h.registerRoutes()
-	h.router.Use(checksumAddressMiddleware, verifySignatureMiddleware)
 	return &h
 }
 
@@ -100,68 +92,4 @@ func (h *Handler) registerRoutes() {
 	// Testing
 	h.router.HandleFunc("/collection/{slug}/tokens", h.getCollectionTokens).
 		Methods("GET")
-}
-
-func checksumAddressMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var address = common.HexToAddress(r.Header.Get("X-Address"))
-
-		// Make sure X-Address is checksummed
-		r.Header.Set("X-Address", address.String())
-		next.ServeHTTP(w, r)
-	})
-}
-
-func verifySignatureMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var (
-			sig              = r.Header.Get("X-Signature")
-			address          = r.Header.Get("X-Address")
-			msg              = r.Header.Get("X-Message")
-			currentRoute     = mux.CurrentRoute(r).GetName()
-			restrictedRoutes = []string{"followCollection", "unfollowCollection"}
-		)
-		if utils.Contains(restrictedRoutes, currentRoute) {
-			if !verifySig(address, sig, []byte(msg)) {
-				log.Println("Signature verification failed")
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func verifySig(from, sigHex string, msg []byte) bool {
-	fromAddr := common.HexToAddress(from)
-
-	sig := hexutil.MustDecode(sigHex)
-	// https://github.com/ethereum/go-ethereum/blob/55599ee95d4151a2502465e0afc7c47bd1acba77/internal/ethapi/api.go#L442
-	if sig[64] != 27 && sig[64] != 28 {
-		return false
-	}
-	sig[64] -= 27
-
-	pubKey, err := crypto.SigToPub(signHash(msg), sig)
-	if err != nil {
-		return false
-	}
-
-	recoveredAddr := crypto.PubkeyToAddress(*pubKey)
-
-	return fromAddr == recoveredAddr
-}
-
-// https://github.com/ethereum/go-ethereum/blob/55599ee95d4151a2502465e0afc7c47bd1acba77/internal/ethapi/api.go#L404
-// signHash is a helper function that calculates a hash for the given message that can be
-// safely used to calculate a signature from.
-//
-// The hash is calculated as
-//   keccak256("\x19Ethereum Signed Message:\n"${message length}${message}).
-//
-// This gives context to the signed message and prevents signing of transactions.
-func signHash(data []byte) []byte {
-	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), data)
-	return crypto.Keccak256([]byte(msg))
 }

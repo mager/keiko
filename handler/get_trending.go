@@ -21,7 +21,7 @@ func (h *Handler) getTrending(w http.ResponseWriter, r *http.Request) {
 	var (
 		ctx                     = context.TODO()
 		resp                    = GetTrendingResp{}
-		collections             = h.database.Collection("collections")
+		collections             = h.dbClient.Client.Collection("collections")
 		highestFloorCollections = make([]database.Collection, 0)
 		highestFloorCounter     = 0
 	)

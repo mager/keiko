@@ -23,6 +23,12 @@ type BQCollectionsUpdateRecord struct {
 	RequestTime    time.Time
 }
 
+type BQAPICallsRecord struct {
+	APIKey      string
+	Path        string
+	RequestTime time.Time
+}
+
 // ProvideBQ provides a bigquery client
 func ProvideBQ() *bigquery.Client {
 	projectID := "floor-report-327113"
@@ -87,5 +93,28 @@ func RecordCollectionsUpdateInBigQuery(
 	)
 	if err := u.Put(ctx, items); err != nil {
 		logger.Error(err)
+	}
+}
+
+func RecordAPICall(
+	bq *bigquery.Client,
+	apiKey string,
+	path string,
+) {
+	var (
+		ctx   = context.Background()
+		table = bq.DatasetInProject("floor-report-327113", "api_calls").Table("logs")
+		u     = table.Inserter()
+
+		items = []*BQAPICallsRecord{
+			{
+				APIKey:      apiKey,
+				Path:        path,
+				RequestTime: time.Now(),
+			},
+		}
+	)
+	if err := u.Put(ctx, items); err != nil {
+		log.Fatalf("Failed to insert: %v", err)
 	}
 }

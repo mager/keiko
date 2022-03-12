@@ -24,7 +24,7 @@ func (h *Handler) getFrens(w http.ResponseWriter, r *http.Request) {
 	var (
 		ctx   = context.TODO()
 		resp  = GetFrensResp{}
-		users = h.database.Collection("users")
+		users = h.dbClient.Client.Collection("users")
 	)
 
 	// Fetch the list of collections that the user follows

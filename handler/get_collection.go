@@ -41,9 +41,9 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	var (
 		ctx         = context.TODO()
 		resp        = GetCollectionResp{}
-		collections = h.database.Collection("collections")
-		users       = h.database.Collection("users")
-		contracts   = h.database.Collection("contracts")
+		collections = h.dbClient.Client.Collection("collections")
+		users       = h.dbClient.Client.Collection("users")
+		contracts   = h.dbClient.Client.Collection("contracts")
 		address     = r.Header.Get("X-Address")
 		slug        = mux.Vars(r)["slug"]
 		stats       = make([]BQStat, 0)
@@ -76,7 +76,7 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch time-series data from BigQuery
-	q := h.bq.Query(fmt.Sprintf(`
+	q := h.bqClient.Query(fmt.Sprintf(`
 		SELECT Floor, RequestTime, SevenDayVolume
 		FROM `+"`floor-report-327113.collections.update`"+`
 		WHERE slug = "%s"
