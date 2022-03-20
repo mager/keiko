@@ -27,7 +27,7 @@ func ProvideRouter(
 	var router = mux.NewRouter()
 
 	router.Use(
-		authMiddleware(dbClient),
+		// authMiddleware(dbClient),
 		apiLoggingMiddleware(dbClient, bqClient),
 		jsonMiddleware,
 		verifySignatureMiddleware,
