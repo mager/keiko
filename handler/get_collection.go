@@ -120,7 +120,7 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// BETA: Show contract for Proof Collective
-	if slug == "proof-collective" || slug == "robotos-official" {
+	if slug == "proof-collective" || slug == "eightbitme" {
 		c := contracts.Doc(slug)
 		docsnap, err := c.Get(ctx)
 		if err != nil {
