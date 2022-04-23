@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -88,7 +89,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	var (
 		err     error
 		req     InfoReq
-		address = mux.Vars(r)["address"]
+		address = strings.ToLower(mux.Vars(r)["address"])
 		ensName string
 		// c       = cache.New(5*time.Minute, 10*time.Minute)
 	)
@@ -108,8 +109,6 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "you must include a valid ETH address in the request", http.StatusBadRequest)
 			return
 		}
-	} else {
-		address = common.HexToAddress(address).String()
 	}
 
 	var (
@@ -134,6 +133,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		h.logger.Info("User found in database", "address", address)
 		resp.Collections, resp.TotalETH = h.adaptWalletToCollectionResp(user.Wallet)
 	} else {
+		h.logger.Info("User not found in database, fetching from Opensea", "address", address)
 		resp.Collections = h.getNFTCollection(r.Context(), address)
 	}
 
