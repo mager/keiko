@@ -81,16 +81,6 @@ func jsonMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func checksumAddressMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var address = common.HexToAddress(r.Header.Get("X-Address"))
-
-		// Make sure X-Address is checksummed
-		r.Header.Set("X-Address", address.String())
-		next.ServeHTTP(w, r)
-	})
-}
-
 func verifySignatureMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
