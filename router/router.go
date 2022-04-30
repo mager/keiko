@@ -88,7 +88,7 @@ func verifySignatureMiddleware(next http.Handler) http.Handler {
 			address          = r.Header.Get("X-Address")
 			msg              = r.Header.Get("X-Message")
 			currentRoute     = mux.CurrentRoute(r).GetName()
-			restrictedRoutes = []string{"followCollection", "unfollowCollection"}
+			restrictedRoutes = []string{"followCollection", "unfollowCollection", "updateUser"}
 		)
 
 		if utils.Contains(restrictedRoutes, currentRoute) {

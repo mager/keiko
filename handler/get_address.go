@@ -70,18 +70,7 @@ type GetAddressResp struct {
 	TotalETH    float64          `json:"totalETH"`
 	ETHPrice    float64          `json:"ethPrice"`
 	ENSName     string           `json:"ensName"`
-	User        UserResp         `json:"user"`
-}
-
-type UserResp struct {
-	Name        string   `json:"name"`
-	Photo       bool     `json:"photo"`
-	ENSName     string   `json:"ensName"`
-	Collections []string `json:"collections"`
-	Slug        string   `json:"slug"`
-	Twitter     string   `json:"twitter"`
-	OpenSea     string   `json:"openSea"`
-	IsWhale     bool     `json:"isWhale"`
+	User        User             `json:"user"`
 }
 
 // getAddress is the route handler for the GET /address/{address} endpoint
@@ -127,7 +116,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if the user exists in the database first
-	user, err := h.getUser(address)
+	user, err := h.fetchUser(address)
 	if err == nil && user.ShouldIndex {
 		resp.User = h.adaptUser(user)
 		h.logger.Info("User found in database", "address", address)
@@ -160,29 +149,6 @@ func (h *Handler) asyncGetENSNameFromAddress(address string, rc chan string) {
 	}
 
 	rc <- domain
-}
-
-func (h *Handler) getUser(address string) (database.User, error) {
-	// Fetch user from Firestore
-	var user database.User
-
-	docsnap, err := h.dbClient.Client.Collection("users").Doc(address).Get(h.ctx)
-	if err != nil {
-		h.logger.Error(err)
-		return user, err
-	}
-
-	if docsnap.Exists() {
-		err = docsnap.DataTo(&user)
-		if err != nil {
-			h.logger.Error(err)
-		}
-	} else {
-		h.logger.Info("User not found in Firestore")
-		return user, err
-	}
-
-	return user, nil
 }
 
 func (h *Handler) adaptWalletToCollectionResp(wallet database.Wallet) ([]CollectionResp, float64) {
@@ -257,8 +223,8 @@ func (h *Handler) adaptFloor(collections []database.Collection, wc database.Wall
 	return floor
 }
 
-func (h *Handler) adaptUser(user database.User) UserResp {
-	return UserResp{
+func (h *Handler) adaptUser(user database.User) User {
+	return User{
 		Name:        user.Name,
 		Photo:       user.Photo,
 		ENSName:     user.ENSName,
@@ -267,6 +233,7 @@ func (h *Handler) adaptUser(user database.User) UserResp {
 		Twitter:     user.Twitter,
 		OpenSea:     user.OpenSea,
 		IsWhale:     user.IsWhale,
+		DiscordID:   user.DiscordID,
 	}
 }
 

@@ -70,6 +70,11 @@ func (h *Handler) registerRoutes() {
 		Methods("GET")
 
 	// Users
+	h.router.HandleFunc("/user/{address}", h.getUser).
+		Methods("GET")
+	h.router.HandleFunc("/user/{address}", h.updateUser).
+		Methods("POST").
+		Name("updateUser")
 	h.router.HandleFunc("/users", h.newUser).
 		Methods("POST")
 	h.router.HandleFunc("/following", h.getFollowing).
