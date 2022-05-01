@@ -11,6 +11,7 @@ import (
 
 type User struct {
 	Name        string   `json:"name"`
+	Bio         string   `json:"bio"`
 	Photo       bool     `json:"photo"`
 	ENSName     string   `json:"ensName"`
 	Collections []string `json:"collections"`
@@ -68,12 +69,12 @@ func (h *Handler) getUser(w http.ResponseWriter, r *http.Request) {
 	resp := UserResp{
 		User: User{
 			Name:        user.Name,
+			Bio:         user.Bio,
 			Photo:       user.Photo,
 			ENSName:     user.ENSName,
 			Collections: user.Collections,
 			Slug:        user.Slug,
 			Twitter:     user.Twitter,
-			OpenSea:     user.OpenSea,
 			IsWhale:     user.IsWhale,
 			DiscordID:   user.DiscordID,
 		},

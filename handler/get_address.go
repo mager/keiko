@@ -231,7 +231,6 @@ func (h *Handler) adaptUser(user database.User) User {
 		Collections: user.Collections,
 		Slug:        user.Slug,
 		Twitter:     user.Twitter,
-		OpenSea:     user.OpenSea,
 		IsWhale:     user.IsWhale,
 		DiscordID:   user.DiscordID,
 	}
