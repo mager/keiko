@@ -70,6 +70,7 @@ type GetAddressResp struct {
 	TotalETH    float64          `json:"totalETH"`
 	ETHPrice    float64          `json:"ethPrice"`
 	ENSName     string           `json:"ensName"`
+	UpdatedAt   time.Time        `json:"updatedAt"`
 	User        User             `json:"user"`
 }
 
@@ -119,7 +120,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	user, err := h.fetchUser(address)
 	if err == nil && user.ShouldIndex {
 		resp.User = h.adaptUser(user)
-		h.logger.Info("User found in database", "address", address)
+		h.logger.Infow("User found in database", "address", address)
 		resp.Collections, resp.TotalETH = h.adaptWalletToCollectionResp(user.Wallet)
 	} else {
 		h.logger.Info("User not found in database, fetching from Opensea", "address", address)
@@ -137,6 +138,8 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(resp.Collections[:], func(i, j int) bool {
 		return resp.Collections[i].Floor > resp.Collections[j].Floor
 	})
+
+	resp.UpdatedAt = user.Wallet.UpdatedAt
 
 	json.NewEncoder(w).Encode(resp)
 }
