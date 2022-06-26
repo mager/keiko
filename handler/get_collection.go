@@ -78,7 +78,7 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	// Fetch time-series data from BigQuery
 	q := h.bqClient.Query(fmt.Sprintf(`
 		SELECT Floor, RequestTime, SevenDayVolume
-		FROM `+"`floor-report-327113.collections.update`"+`
+		FROM `+"`floorreport.collections.update`"+`
 		WHERE slug = "%s"
 		ORDER BY RequestTime
 	`, slug))

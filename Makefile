@@ -6,11 +6,11 @@ test:
 	go test ./...
 
 build:
-	gcloud builds submit --tag gcr.io/floor-report-327113/keiko
+	gcloud builds submit --tag gcr.io/floorreport/keiko
 
 deploy:
 	gcloud run deploy keiko \
-		--image gcr.io/floor-report-327113/keiko \
+		--image gcr.io/floorreport/keiko \
 		--platform managed
 
 ship:

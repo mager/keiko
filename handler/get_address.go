@@ -129,7 +129,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 
 	if !req.SkipBQ {
 		bigquery.RecordRequestInBigQuery(
-			h.bqClient.DatasetInProject("floor-report-327113", "info"),
+			h.bqClient.DatasetInProject("floorreport", "info"),
 			h.logger,
 			address,
 		)

@@ -15,7 +15,7 @@ type DatabaseClient struct {
 
 // ProvideDB provides a firestore client
 func ProvideDB() *DatabaseClient {
-	projectID := "floor-report-327113"
+	projectID := "floorreport"
 
 	client, err := firestore.NewClient(context.TODO(), projectID)
 	if err != nil {
