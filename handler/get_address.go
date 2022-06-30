@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
 	"github.com/mager/go-opensea/opensea"
-	"github.com/mager/keiko/bigquery"
 	"github.com/mager/sweeper/database"
 	ens "github.com/wealdtech/go-ens/v3"
 )
@@ -125,14 +124,6 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	} else {
 		h.logger.Info("User not found in database, fetching from Opensea", "address", address)
 		resp.Collections = h.getNFTCollection(r.Context(), address)
-	}
-
-	if !req.SkipBQ {
-		bigquery.RecordRequestInBigQuery(
-			h.bqClient.DatasetInProject("floorreport", "info"),
-			h.logger,
-			address,
-		)
 	}
 
 	sort.Slice(resp.Collections[:], func(i, j int) bool {
