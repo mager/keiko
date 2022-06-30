@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 
-	"cloud.google.com/go/bigquery"
 	"github.com/gorilla/mux"
 	"github.com/mager/go-opensea/opensea"
 	"github.com/mager/keiko/coinstats"
@@ -20,7 +19,6 @@ type Handler struct {
 	logger          *zap.SugaredLogger
 	router          *mux.Router
 	os              *opensea.OpenSeaClient
-	bqClient        *bigquery.Client
 	cs              coinstats.CoinstatsClient
 	dbClient        *database.DatabaseClient
 	infuraClient    *infura.InfuraClient
@@ -34,7 +32,6 @@ func New(
 	logger *zap.SugaredLogger,
 	router *mux.Router,
 	os *opensea.OpenSeaClient,
-	bqClient *bigquery.Client,
 	cs coinstats.CoinstatsClient,
 	dbClient *database.DatabaseClient,
 	infuraClient *infura.InfuraClient,
@@ -46,7 +43,6 @@ func New(
 		logger,
 		router,
 		os,
-		bqClient,
 		cs,
 		dbClient,
 		infuraClient,

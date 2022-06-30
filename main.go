@@ -4,10 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"cloud.google.com/go/bigquery"
 	"github.com/gorilla/mux"
 	"github.com/mager/go-opensea/opensea"
-	bq "github.com/mager/keiko/bigquery"
 	cs "github.com/mager/keiko/coinstats"
 	"github.com/mager/keiko/config"
 	db "github.com/mager/keiko/database"
@@ -25,7 +23,6 @@ import (
 func main() {
 	fx.New(
 		fx.Provide(
-			bq.Options,
 			config.Options,
 			cs.Options,
 			db.Options,
@@ -42,7 +39,6 @@ func main() {
 
 func Register(
 	lc fx.Lifecycle,
-	bqClient *bigquery.Client,
 	cfg config.Config,
 	cs cs.CoinstatsClient,
 	etherscanClient *ethscan.EtherscanClient,
@@ -75,7 +71,6 @@ func Register(
 		logger,
 		router,
 		openSeaClient,
-		bqClient,
 		cs,
 		dbClient,
 		infuraClient,

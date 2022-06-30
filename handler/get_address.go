@@ -77,7 +77,6 @@ type GetAddressResp struct {
 func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	var (
 		err     error
-		req     InfoReq
 		address = strings.ToLower(mux.Vars(r)["address"])
 		ensName string
 		// c       = cache.New(5*time.Minute, 10*time.Minute)

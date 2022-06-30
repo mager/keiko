@@ -5,12 +5,10 @@ import (
 	"log"
 	"net/http"
 
-	"cloud.google.com/go/bigquery"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gorilla/mux"
-	bq "github.com/mager/keiko/bigquery"
 	"github.com/mager/keiko/database"
 	"github.com/mager/keiko/utils"
 	"go.uber.org/fx"
@@ -22,7 +20,6 @@ func ProvideRouter(
 	lc fx.Lifecycle,
 	logger *zap.SugaredLogger,
 	dbClient *database.DatabaseClient,
-	bqClient *bigquery.Client,
 ) *mux.Router {
 	var router = mux.NewRouter()
 
@@ -53,20 +50,6 @@ func authMiddleware(dbClient *database.DatabaseClient) func(http.Handler) http.H
 			}
 
 			http.Error(w, "Invalid API key", http.StatusUnauthorized)
-		})
-	}
-}
-
-func apiLoggingMiddleware(dbClient *database.DatabaseClient, bqClient *bigquery.Client) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Make sure they are sending an API key
-			apiKey := r.Header.Get("X-API-KEY")
-
-			// Log the request in BigQuery
-			bq.RecordAPICall(bqClient, apiKey, r.URL.Path)
-
-			next.ServeHTTP(w, r)
 		})
 	}
 }

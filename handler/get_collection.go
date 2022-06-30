@@ -3,16 +3,13 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
-	"cloud.google.com/go/bigquery"
 	"github.com/gorilla/mux"
 	"github.com/mager/keiko/constants"
 	"github.com/mager/keiko/utils"
 	"github.com/mager/sweeper/database"
-	"google.golang.org/api/iterator"
 )
 
 type BQStat struct {
@@ -46,7 +43,6 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 		contracts   = h.dbClient.Client.Collection("contracts")
 		address     = r.Header.Get("X-Address")
 		slug        = mux.Vars(r)["slug"]
-		stats       = make([]BQStat, 0)
 	)
 
 	// Fetch collection from database
@@ -74,32 +70,6 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		resp.Thumb = thumb
 	}
-
-	// Fetch time-series data from BigQuery
-	q := h.bqClient.Query(fmt.Sprintf(`
-		SELECT Floor, RequestTime, SevenDayVolume
-		FROM `+"`floorreport.collections.update`"+`
-		WHERE slug = "%s"
-		ORDER BY RequestTime
-	`, slug))
-	it, _ := q.Read(ctx)
-	for {
-		var values []bigquery.Value
-		err := it.Next(&values)
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return
-		}
-		stats = append(stats, BQStat{
-			Floor:     values[0].(float64),
-			Timestamp: values[1].(time.Time),
-		})
-	}
-
-	// resp.Stats = h.adaptStats(stats)
-	resp.Stats = h.adaptStats(stats)
 
 	// Check if the user is following the collection
 	if address != "" && address != constants.DefaultAddress {
