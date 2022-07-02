@@ -40,7 +40,6 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 		resp        = GetCollectionResp{}
 		collections = h.dbClient.Client.Collection("collections")
 		users       = h.dbClient.Client.Collection("users")
-		contracts   = h.dbClient.Client.Collection("contracts")
 		address     = r.Header.Get("X-Address")
 		slug        = mux.Vars(r)["slug"]
 	)
@@ -89,68 +88,5 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// BETA: Show contract for Proof Collective
-	if slug == "eightbitme" {
-		c := contracts.Doc(slug)
-		docsnap, err := c.Get(ctx)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		var contract database.Contract
-		if err := docsnap.DataTo(&contract); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		resp.Contract = contract
-	}
-
 	json.NewEncoder(w).Encode(resp)
-}
-
-func (h *Handler) adaptStats(stats []BQStat) []Stat {
-	var statsByDate = h.reduceStats(stats)
-
-	var result = make([]Stat, 0)
-
-	for _, stat := range statsByDate {
-		result = append(result, Stat{
-			Date:  h.formatStatDate(stat),
-			Floor: stat.Floor,
-		})
-	}
-
-	return result
-}
-
-// Only return one stat per day, filter out 0 values
-func (h *Handler) reduceStats(stats []BQStat) []BQStat {
-	var reducedByDate = []BQStat{}
-	var reducedRemoveZeros = []BQStat{}
-
-	// Return one stat per day
-	for _, stat := range stats {
-		if len(reducedByDate) == 0 {
-			reducedByDate = append(reducedByDate, stat)
-		} else {
-			if stat.Timestamp.Day() != reducedByDate[len(reducedByDate)-1].Timestamp.Day() {
-				reducedByDate = append(reducedByDate, stat)
-			}
-		}
-	}
-
-	// Remove 0 values
-	for _, stat := range reducedByDate {
-		if stat.Floor != 0 {
-			reducedRemoveZeros = append(reducedRemoveZeros, stat)
-		}
-	}
-
-	return reducedRemoveZeros
-}
-
-func (h *Handler) formatStatDate(stat BQStat) string {
-	return stat.Timestamp.Format("01-02")
 }

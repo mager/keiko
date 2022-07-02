@@ -59,9 +59,11 @@ func (h *Handler) registerRoutes() {
 	h.router.HandleFunc("/address/{address}", h.getAddress).
 		Methods("GET")
 
-	// Stats
-	h.router.HandleFunc("/stats", h.getStats).
+	// Home page
+	h.router.HandleFunc("/home", h.getHome).
 		Methods("GET")
+
+	// Trending
 	h.router.HandleFunc("/trending", h.getTrending).
 		Methods("GET")
 
