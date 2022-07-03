@@ -78,7 +78,7 @@ func (h *Handler) registerRoutes() {
 	h.router.HandleFunc("/following", h.getFollowing).
 		Methods("GET")
 
-		// Frens
+	// Frens
 	h.router.HandleFunc("/frens", h.getFrens).
 		Methods("GET")
 

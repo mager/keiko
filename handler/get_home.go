@@ -3,31 +3,32 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"math/rand"
 	"net/http"
 	"time"
 
-	"cloud.google.com/go/firestore"
 	"github.com/mager/keiko/database"
-	sweeper "github.com/mager/sweeper/database"
 
 	"go.uber.org/zap"
-	"google.golang.org/api/iterator"
 )
 
 type GetHomeResp struct {
-	Total     int       `json:"total"`
-	Updated   time.Time `json:"updated"`
 	RandomNFT RandomNFT `json:"randomNFT"`
+	Stats     Stats     `json:"stats"`
 }
 
 type RandomNFT struct {
 	Collection string    `json:"collection"`
+	Expires    time.Time `json:"expires"`
 	ImageURL   string    `json:"imageUrl"`
 	Name       string    `json:"name"`
 	Owner      string    `json:"owner"`
-	Expires    time.Time `json:"expires"`
 	Updated    time.Time `json:"updated"`
+}
+
+type Stats struct {
+	TotalCollections int       `json:"totalCollections"`
+	TotalUsers       int       `json:"totalUsers"`
+	Updated          time.Time `json:"updated"`
 }
 
 // getStats is the route handler for the GET /home endpoint
@@ -37,14 +38,8 @@ func (h *Handler) getHome(w http.ResponseWriter, r *http.Request) {
 		resp = GetHomeResp{}
 	)
 
-	// Fetch stats
-	total, updated := getStats(ctx, h.logger, h.dbClient)
-
-	// Set total
-	resp.Total = total
-
-	// Set last updated
-	resp.Updated = updated
+	// Get stats
+	resp.Stats = getStats(ctx, h.logger, h.dbClient)
 
 	// Get Random NFT
 	resp.RandomNFT = getRandomNFT(ctx, h.logger, h.dbClient)
@@ -52,39 +47,19 @@ func (h *Handler) getHome(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-func getStats(ctx context.Context, logger *zap.SugaredLogger, db *database.DatabaseClient) (int, time.Time) {
-	var (
-		docs        = make([]*firestore.DocumentRef, 0)
-		collections = db.Client.Collection("collections")
-		updated     = time.Time{}
-	)
-
-	// Fetch all collections
-	iter := collections.Documents(ctx)
-	for {
-		doc, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			logger.Errorf("Error fetching collections: %v", err)
-			break
-		}
-		docs = append(docs, doc.Ref)
-
-		// Get last updated
-		var d sweeper.Collection
-		err = doc.DataTo(&d)
-		if err != nil {
-			logger.Errorf("Error fetching collections: %v", err)
-			break
-		}
-		if d.Updated.After(updated) {
-			updated = doc.Data()["updated"].(time.Time)
-		}
+func getStats(ctx context.Context, logger *zap.SugaredLogger, db *database.DatabaseClient) Stats {
+	data, err := db.Client.Collection("features").Doc("stats").Get(ctx)
+	if err != nil {
+		logger.Errorf("Error fetching stats: %v", err)
 	}
 
-	return len(docs), updated
+	var stats = Stats{}
+	err = data.DataTo(&stats)
+	if err != nil {
+		logger.Errorf("Error fetching stats: %v", err)
+	}
+
+	return stats
 }
 
 func getRandomNFT(ctx context.Context, logger *zap.SugaredLogger, db *database.DatabaseClient) RandomNFT {
@@ -93,79 +68,11 @@ func getRandomNFT(ctx context.Context, logger *zap.SugaredLogger, db *database.D
 		logger.Errorf("Error fetching nftoftheday: %v", err)
 	}
 
-	var (
-		n   RandomNFT
-		now = time.Now()
-	)
+	var n RandomNFT
 	err = nft.DataTo(&n)
 	if err != nil {
 		logger.Errorf("Error fetching nftoftheday: %v", err)
 	}
 
-	if now.After(n.Expires) {
-		n = getRandomNFTNoCache(ctx, logger, db)
-		n.Expires = now.Add(time.Hour * 24)
-		n.Updated = now
-		_, err = db.Client.Collection("features").Doc("nftoftheday").Set(ctx, n)
-		if err != nil {
-			logger.Errorf("Error setting nftoftheday: %v", err)
-		}
-	}
-
 	return n
-}
-
-func getOwner(u *firestore.DocumentSnapshot, user sweeper.User) string {
-	if user.ENSName != "" {
-		return user.ENSName
-	}
-	return u.Ref.ID
-}
-
-func getRandomNFTNoCache(ctx context.Context, logger *zap.SugaredLogger, db *database.DatabaseClient) RandomNFT {
-	var (
-		docs        = make([]*firestore.DocumentRef, 0)
-		collections = db.Client.Collection("users")
-	)
-
-	// Initialize local pseudorandom generator
-	rand.Seed(time.Now().Unix())
-
-	// Fetch a random user
-	iter := collections.Documents(ctx)
-	for {
-		doc, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			logger.Errorf("Error fetching collections: %v", err)
-			break
-		}
-		docs = append(docs, doc.Ref)
-	}
-
-	// Get random user
-	user := docs[rand.Intn(len(docs))]
-	u, err := user.Get(ctx)
-	if err != nil {
-		logger.Errorf("Error fetching user: %v", err)
-	}
-
-	// Get random NFT
-	var userData sweeper.User
-	err = u.DataTo(&userData)
-	if err != nil {
-		logger.Errorf("Error fetching user: %v", err)
-	}
-	collection := userData.Wallet.Collections[rand.Intn(len(userData.Wallet.Collections))]
-	nft := collection.NFTs[rand.Intn(len(collection.NFTs))]
-	var resp = RandomNFT{
-		Collection: collection.Name,
-		ImageURL:   nft.ImageURL,
-		Name:       nft.Name,
-		Owner:      getOwner(u, userData),
-	}
-
-	return resp
 }
