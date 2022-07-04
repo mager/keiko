@@ -17,12 +17,13 @@ type GetHomeResp struct {
 }
 
 type RandomNFT struct {
-	Collection string    `json:"collection"`
-	Expires    time.Time `json:"expires"`
-	ImageURL   string    `json:"imageUrl"`
-	Name       string    `json:"name"`
-	Owner      string    `json:"owner"`
-	Updated    time.Time `json:"updated"`
+	CollectionName string    `json:"collectionName"`
+	CollectionSlug string    `json:"collectionSlug"`
+	Expires        time.Time `json:"expires"`
+	ImageURL       string    `json:"imageUrl"`
+	Name           string    `json:"name"`
+	Owner          string    `json:"owner"`
+	Updated        time.Time `json:"updated"`
 }
 
 type Stats struct {
