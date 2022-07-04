@@ -114,9 +114,12 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		resp.ENSName = ensName
 	}
 
+	// Convert to lowercase
+	address = strings.ToLower(address)
+
 	// Check if the user exists in the database first
 	user, err := h.fetchUser(address)
-	if err == nil && user.ShouldIndex {
+	if err == nil {
 		resp.User = h.adaptUser(user)
 		h.logger.Infow("User found in database", "address", address)
 		resp.Collections, resp.TotalETH = h.adaptWalletToCollectionResp(user.Wallet)
