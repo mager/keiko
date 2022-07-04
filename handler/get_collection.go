@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/mager/keiko/constants"
-	"github.com/mager/keiko/utils"
 	"github.com/mager/sweeper/database"
 )
 
@@ -22,15 +20,13 @@ type Stat struct {
 }
 
 type GetCollectionResp struct {
-	Name        string              `json:"name"`
-	Slug        string              `json:"slug"`
-	Floor       float64             `json:"floor"`
-	Updated     time.Time           `json:"updated"`
-	Thumb       string              `json:"thumb"`
-	Stats       []Stat              `json:"stats"`
-	IsFollowing bool                `json:"isFollowing"`
-	Collection  database.Collection `json:"collection"`
-	Contract    database.Contract   `json:"contract"`
+	Name       string              `json:"name"`
+	Slug       string              `json:"slug"`
+	Floor      float64             `json:"floor"`
+	Updated    time.Time           `json:"updated"`
+	Thumb      string              `json:"thumb"`
+	Stats      []Stat              `json:"stats"`
+	Collection database.Collection `json:"collection"`
 }
 
 // getCollection is the route handler for the GET /collection/{slug} endpoint
@@ -39,8 +35,6 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 		ctx         = context.TODO()
 		resp        = GetCollectionResp{}
 		collections = h.dbClient.Client.Collection("collections")
-		users       = h.dbClient.Client.Collection("users")
-		address     = r.Header.Get("X-Address")
 		slug        = mux.Vars(r)["slug"]
 	)
 
@@ -68,24 +62,6 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	thumb, ok := d["thumb"].(string)
 	if ok {
 		resp.Thumb = thumb
-	}
-
-	// Check if the user is following the collection
-	if address != "" && address != constants.DefaultAddress {
-		var db database.User
-		docsnap, err := users.Doc(address).Get(ctx)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		if err := docsnap.DataTo(&db); err != nil {
-			h.logger.Error(err.Error())
-		} else {
-			if utils.Contains(db.Collections, slug) {
-				resp.IsFollowing = true
-			}
-		}
 	}
 
 	json.NewEncoder(w).Encode(resp)
