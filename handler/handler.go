@@ -92,6 +92,10 @@ func (h *Handler) registerRoutes() {
 		Methods("POST").
 		Name("unfollowCollection")
 
+	// Search
+	h.router.HandleFunc("/search", h.search).
+		Methods("POST")
+
 	// Testing
 	h.router.HandleFunc("/collection/{slug}/tokens", h.getCollectionTokens).
 		Methods("GET")
