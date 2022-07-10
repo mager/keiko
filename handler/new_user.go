@@ -12,7 +12,7 @@ type NewUserReq struct {
 	Photo   string `json:"photo"`
 	Twitter string `json:"twitter"`
 	OpenSea string `json:"openSea"`
-	IsWhale bool   `json:"isWhale"`
+	IsFren  bool   `json:"IsFren"`
 }
 
 type NewUserResp struct {
@@ -60,8 +60,8 @@ func (h *Handler) newUser(w http.ResponseWriter, r *http.Request) {
 		if req.OpenSea != "" {
 			d["openSea"] = req.OpenSea
 		}
-		if req.IsWhale {
-			d["isWhale"] = true
+		if req.IsFren {
+			d["IsFren"] = true
 		}
 
 		_, err := users.Doc(address).Create(h.ctx, d)

@@ -28,7 +28,7 @@ func (h *Handler) getFrens(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Fetch the list of collections that the user follows
-	q := users.Where("isWhale", "==", true)
+	q := users.Where("IsFren", "==", true)
 	iter := q.Documents(ctx)
 	defer iter.Stop()
 

@@ -18,7 +18,7 @@ type User struct {
 	Slug        string   `json:"slug"`
 	Twitter     string   `json:"twitter"`
 	OpenSea     string   `json:"openSea"`
-	IsWhale     bool     `json:"isWhale"`
+	IsFren      bool     `json:"IsFren"`
 	DiscordID   string   `json:"discordID"`
 }
 
@@ -75,7 +75,7 @@ func (h *Handler) getUser(w http.ResponseWriter, r *http.Request) {
 			Collections: user.Collections,
 			Slug:        user.Slug,
 			Twitter:     user.Twitter,
-			IsWhale:     user.IsWhale,
+			IsFren:      user.IsFren,
 			DiscordID:   user.DiscordID,
 		},
 	}
