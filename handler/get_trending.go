@@ -18,6 +18,12 @@ type GetTrendingResp struct {
 }
 
 func (h *Handler) getTrending(w http.ResponseWriter, r *http.Request) {
+	resp := h.GetTrending()
+
+	json.NewEncoder(w).Encode(resp)
+}
+
+func (h *Handler) GetTrending() GetTrendingResp {
 	var (
 		ctx                     = context.TODO()
 		resp                    = GetTrendingResp{}
@@ -105,5 +111,5 @@ func (h *Handler) getTrending(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	json.NewEncoder(w).Encode(resp)
+	return resp
 }
