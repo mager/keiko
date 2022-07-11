@@ -1,5 +1,7 @@
 # keiko
 
+Backend for https://floor.report.
+
 ## Google Cloud Setup
 
 - `gcloud projects create floor-report` - to create a new project
