@@ -123,16 +123,14 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		resp.User = h.adaptUser(user)
 		h.logger.Infow("User found in database", "address", address)
 		resp.Collections, resp.TotalETH = h.adaptWalletToCollectionResp(user.Wallet)
+		sort.Slice(resp.Collections[:], func(i, j int) bool {
+			return resp.Collections[i].Floor > resp.Collections[j].Floor
+		})
+
+		resp.UpdatedAt = user.Wallet.UpdatedAt
 	} else {
-		h.logger.Info("User not found in database, fetching from Opensea", "address", address)
-		resp.Collections = h.getNFTCollection(r.Context(), address)
+		h.logger.Info("User not found in database, returning", "address", address)
 	}
-
-	sort.Slice(resp.Collections[:], func(i, j int) bool {
-		return resp.Collections[i].Floor > resp.Collections[j].Floor
-	})
-
-	resp.UpdatedAt = user.Wallet.UpdatedAt
 
 	json.NewEncoder(w).Encode(resp)
 }
