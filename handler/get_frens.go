@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
 )
 
@@ -17,7 +18,6 @@ type Fren struct {
 	Address string `json:"address"`
 	Photo   bool   `json:"photo"`
 	Slug    string `json:"slug"`
-	ENSName string `json:"ensName"`
 }
 
 func (h *Handler) getFrens(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +28,7 @@ func (h *Handler) getFrens(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Fetch the list of collections that the user follows
-	q := users.Where("IsFren", "==", true)
+	q := users.Where("isFren", "==", true)
 	iter := q.Documents(ctx)
 	defer iter.Stop()
 
@@ -42,16 +42,40 @@ func (h *Handler) getFrens(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var fren Fren
-		if err := doc.DataTo(&fren); err != nil {
+		var user User
+		if err := doc.DataTo(&user); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
+		var fren Fren
+
 		fren.Address = doc.Ref.ID
+		fren.Name = getName(user)
+		fren.Photo = user.Photo
+		fren.Slug = getSlug(user, doc)
 
 		resp.Users = append(resp.Users, fren)
 	}
 
 	json.NewEncoder(w).Encode(resp)
+}
+
+func getName(user User) string {
+	if user.Name != "" {
+		return user.Name
+	}
+	if user.ENSName != "" {
+		return user.ENSName
+	}
+
+	return ""
+}
+
+func getSlug(user User, doc *firestore.DocumentSnapshot) string {
+	if user.ENSName != "" {
+		return user.ENSName
+	}
+
+	return doc.Ref.ID
 }
