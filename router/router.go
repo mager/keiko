@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -26,6 +27,7 @@ func ProvideRouter(
 	router.Use(
 		jsonMiddleware,
 		verifySignatureMiddleware,
+		lowercaseAddressMiddleware,
 	)
 
 	return router
@@ -52,6 +54,17 @@ func authMiddleware(dbClient *database.DatabaseClient) func(http.Handler) http.H
 			http.Error(w, "Invalid API key", http.StatusUnauthorized)
 		})
 	}
+}
+
+func lowercaseAddressMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		address := vars["address"]
+		if address != "" {
+			vars["address"] = strings.ToLower(address)
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // jsonMiddleware makes sure that every response is JSON

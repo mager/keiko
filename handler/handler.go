@@ -73,6 +73,9 @@ func (h *Handler) registerRoutes() {
 	h.router.HandleFunc("/user/{address}", h.updateUser).
 		Methods("POST").
 		Name("updateUser")
+	h.router.HandleFunc("/user/{address}/metadata", h.updateUserMetadata).
+		Methods("POST").
+		Name("updateAvatar")
 	h.router.HandleFunc("/users", h.newUser).
 		Methods("POST")
 	h.router.HandleFunc("/following", h.getFollowing).
