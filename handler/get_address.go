@@ -215,6 +215,8 @@ func (h *Handler) adaptFloor(collections []database.Collection, wc database.Wall
 	for _, collection := range collections {
 		if collection.Slug == wc.Slug {
 			floor = collection.Floor
+			// Round to 2 decimal places
+			floor = math.Round(floor*100) / 100
 		}
 	}
 
