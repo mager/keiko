@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"math"
 	"net/http"
 	"sort"
 	"strings"
@@ -187,6 +188,9 @@ func (h *Handler) adaptWalletToCollectionResp(wallet database.Wallet) ([]Collect
 		})
 		totalETH += float64(numOwned) * floor
 	}
+
+	// Round to 3 decimal places
+	totalETH = math.Round(totalETH*1000) / 1000
 
 	return resp, totalETH
 }
