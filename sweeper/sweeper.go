@@ -31,7 +31,7 @@ func ProvideSweeper(logger *zap.SugaredLogger) SweeperClient {
 			Transport: tr,
 		},
 		logger:   logger,
-		basePath: "https://sweeper-jejxy3ytiq-uc.a.run.app",
+		basePath: "https://sweeper.floor.report",
 	}
 }
 
