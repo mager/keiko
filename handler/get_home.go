@@ -23,6 +23,7 @@ type RandomNFT struct {
 	ImageURL       string    `json:"imageUrl"`
 	Name           string    `json:"name"`
 	Owner          string    `json:"owner"`
+	OwnerName      string    `json:"ownerName"`
 	Updated        time.Time `json:"updated"`
 }
 
