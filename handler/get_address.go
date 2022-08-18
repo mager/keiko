@@ -22,6 +22,7 @@ type NFT struct {
 	TokenID  string     `json:"tokenId"`
 	ImageURL string     `json:"imageUrl"`
 	Traits   []NFTTrait `json:"traits"`
+	Floor    float64    `json:"floor"`
 }
 
 type NFTTrait struct {

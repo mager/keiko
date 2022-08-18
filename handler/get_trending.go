@@ -30,6 +30,7 @@ func (h *Handler) GetTrending() GetTrendingResp {
 		collections             = h.dbClient.Client.Collection("collections")
 		highestFloorCollections = make([]database.Collection, 0)
 		highestFloorCounter     = 0
+		limit                   = 50
 	)
 
 	// Fetch collections with the highest floor price
@@ -72,16 +73,16 @@ func (h *Handler) GetTrending() GetTrendingResp {
 		return highestFloorCollections[i].Floor > highestFloorCollections[j].Floor
 	})
 
-	// Only add the first 25 items to the response
+	// Only add the first x items to the response
 	for _, collection := range highestFloorCollections {
-		if highestFloorCounter < 25 {
+		if highestFloorCounter < limit {
 			resp.TopHighestFloor = append(resp.TopHighestFloor, collection)
 		}
 		highestFloorCounter++
 	}
 
 	// Fetch collections with the highest 7d weekly volume
-	highestWeeklyVolumeIter := collections.OrderBy("7d", firestore.Desc).Limit(25).Documents(ctx)
+	highestWeeklyVolumeIter := collections.OrderBy("7d", firestore.Desc).Limit(limit).Documents(ctx)
 	for {
 		doc, err := highestWeeklyVolumeIter.Next()
 		if err == iterator.Done {

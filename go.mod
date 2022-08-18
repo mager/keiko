@@ -11,7 +11,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/mager/go-opensea v0.2.0
+	github.com/mager/go-opensea v0.3.3
 	github.com/mager/sweeper v0.1.3-0.20220727013434-a1fcbb2f7858
 	github.com/nanmu42/etherscan-api v1.8.0
 	github.com/wealdtech/go-ens/v3 v3.5.3
