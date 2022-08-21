@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"math"
 	"net/http"
@@ -12,7 +11,6 @@ import (
 	"cloud.google.com/go/firestore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
-	"github.com/mager/go-opensea/opensea"
 	"github.com/mager/sweeper/database"
 	ens "github.com/wealdtech/go-ens/v3"
 )
@@ -54,8 +52,11 @@ type InfoReq struct {
 	SkipBQ  bool   `json:"skipBQ"`
 }
 
-type CollectionResp struct {
-	Name     string    `json:"name"`
+type AddressCollection struct {
+	Name string `json:"name"`
+	// Value is the combined value of all NFTs in the collection
+	Value float64 `json:"value"`
+	// Floor is the collection floor price
 	Floor    float64   `json:"floor"`
 	Slug     string    `json:"slug"`
 	Thumb    string    `json:"thumb"`
@@ -66,13 +67,13 @@ type CollectionResp struct {
 
 // GetAddressResp is the response for the GET /v2/info endpoint
 type GetAddressResp struct {
-	Address     string           `json:"address"`
-	Collections []CollectionResp `json:"collections"`
-	TotalETH    float64          `json:"totalETH"`
-	ETHPrice    float64          `json:"ethPrice"`
-	ENSName     string           `json:"ensName"`
-	UpdatedAt   time.Time        `json:"updatedAt"`
-	User        User             `json:"user"`
+	Address     string              `json:"address"`
+	Collections []AddressCollection `json:"collections"`
+	TotalETH    float64             `json:"totalETH"`
+	ETHPrice    float64             `json:"ethPrice"`
+	ENSName     string              `json:"ensName"`
+	UpdatedAt   time.Time           `json:"updatedAt"`
+	User        User                `json:"user"`
 }
 
 // getAddress is the route handler for the GET /address/{address} endpoint
@@ -81,7 +82,6 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		err     error
 		address = strings.ToLower(mux.Vars(r)["address"])
 		ensName string
-		// c       = cache.New(5*time.Minute, 10*time.Minute)
 	)
 
 	// Make sure that the request includes an address
@@ -126,7 +126,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		h.logger.Infow("User found in database", "address", address)
 		resp.Collections, resp.TotalETH = h.adaptWalletToCollectionResp(user.Wallet)
 		sort.Slice(resp.Collections[:], func(i, j int) bool {
-			return resp.Collections[i].Floor > resp.Collections[j].Floor
+			return resp.Collections[i].Value > resp.Collections[j].Value
 		})
 
 		resp.UpdatedAt = user.Wallet.UpdatedAt
@@ -147,11 +147,10 @@ func (h *Handler) asyncGetENSNameFromAddress(address string, rc chan string) {
 	rc <- domain
 }
 
-func (h *Handler) adaptWalletToCollectionResp(wallet database.Wallet) ([]CollectionResp, float64) {
+func (h *Handler) adaptWalletToCollectionResp(wallet database.Wallet) ([]AddressCollection, float64) {
 	var (
-		resp           = []CollectionResp{}
+		resp           = []AddressCollection{}
 		collections    = h.dbClient.Client.Collection("collections")
-		dbCollections  = []database.Collection{}
 		collectionDocs = make([]*firestore.DocumentRef, 0)
 		totalETH       float64
 	)
@@ -167,27 +166,21 @@ func (h *Handler) adaptWalletToCollectionResp(wallet database.Wallet) ([]Collect
 	}
 
 	h.logger.Infof("%d collections found in Firestore", len(docsnaps))
-	for _, docsnap := range docsnaps {
-		var collection database.Collection
-		err := docsnap.DataTo(&collection)
-		if err != nil {
-			h.logger.Error(err)
-		}
-		dbCollections = append(dbCollections, collection)
-	}
 
 	for _, c := range wallet.Collections {
 		numOwned := len(c.NFTs)
-		floor := h.adaptFloor(dbCollections, c)
-		resp = append(resp, CollectionResp{
+		nfts := adaptWalletNFTsToCollectionRespNFTs(c.NFTs)
+		value := h.adaptValue(nfts)
+		resp = append(resp, AddressCollection{
 			Name:     c.Name,
 			Slug:     c.Slug,
 			Thumb:    c.ImageURL,
-			NFTs:     adaptWalletNFTsToCollectionRespNFTs(c.NFTs),
-			Floor:    floor,
+			NFTs:     nfts,
+			Floor:    h.adaptFloor(c),
+			Value:    value,
 			NumOwned: numOwned,
 		})
-		totalETH += float64(numOwned) * floor
+		totalETH += value
 	}
 
 	// Round to 3 decimal places
@@ -204,24 +197,25 @@ func adaptWalletNFTsToCollectionRespNFTs(walletNFTs []database.WalletAsset) []NF
 			Name:     walletNFT.Name,
 			TokenID:  walletNFT.TokenID,
 			ImageURL: walletNFT.ImageURL,
+			Floor:    walletNFT.Floor,
 		})
 	}
 
 	return resp
 }
 
-func (h *Handler) adaptFloor(collections []database.Collection, wc database.WalletCollection) float64 {
-	var floor float64
+func (h *Handler) adaptValue(nfts []NFT) float64 {
+	var val float64
 
-	for _, collection := range collections {
-		if collection.Slug == wc.Slug {
-			floor = collection.Floor
-			// Round to 2 decimal places
-			floor = math.Round(floor*100) / 100
-		}
+	for _, nft := range nfts {
+		val += nft.Floor
 	}
 
-	return floor
+	return math.Round(val*100) / 100
+}
+
+func (h *Handler) adaptFloor(wc database.WalletCollection) float64 {
+	return math.Round(wc.Floor*100) / 100
 }
 
 func (h *Handler) adaptUser(user database.User) User {
@@ -235,87 +229,4 @@ func (h *Handler) adaptUser(user database.User) User {
 		IsFren:      user.IsFren,
 		DiscordID:   user.DiscordID,
 	}
-}
-
-// New
-func (h *Handler) getNFTCollection(ctx context.Context, address string) []CollectionResp {
-	var (
-		openseaAssets      = make([]opensea.Asset, 0)
-		collectionsMap     = make(map[string]CollectionResp)
-		collectionSlugDocs = make([]*firestore.DocumentRef, 0)
-	)
-
-	// Fetch the user's collections & NFTs from OpenSea
-	openseaAssets, err := h.os.GetAssets(address)
-	if err != nil {
-		h.logger.Error(err)
-		return []CollectionResp{}
-	}
-
-	// Create a list of wallet collections
-	for _, asset := range openseaAssets {
-		// If we do have a collection for this asset, add to it
-		if _, ok := collectionsMap[asset.Collection.Slug]; ok {
-			w := collectionsMap[asset.Collection.Slug]
-			w.NFTs = append(w.NFTs, NFT{
-				Name:     asset.Name,
-				ImageURL: asset.ImageURL,
-				TokenID:  asset.TokenID,
-			})
-			collectionsMap[asset.Collection.Slug] = w
-			continue
-		} else {
-			// If we don't have a collection for this asset, create it
-			collectionsMap[asset.Collection.Slug] = CollectionResp{
-				Name:  asset.Collection.Name,
-				Slug:  asset.Collection.Slug,
-				Thumb: asset.Collection.ImageURL,
-				NFTs: []NFT{{
-					Name:     asset.Name,
-					TokenID:  asset.TokenID,
-					ImageURL: asset.ImageURL,
-				}},
-			}
-		}
-
-	}
-
-	// Construct a wallet object
-	var collections = make([]CollectionResp, 0)
-	for _, collection := range collectionsMap {
-		collections = append(collections, collection)
-		collectionSlugDocs = append(collectionSlugDocs, h.dbClient.Client.Collection("collections").Doc(collection.Slug))
-	}
-
-	// Add the floor prices
-	var (
-		slugToFloorMap = make(map[string]float64)
-		slugsToAdd     = make([]string, 0)
-	)
-
-	docsnaps, err := h.dbClient.Client.GetAll(h.ctx, collectionSlugDocs)
-	if err != nil {
-		h.logger.Error(err)
-	}
-
-	for _, docsnap := range docsnaps {
-		if !docsnap.Exists() {
-			h.logger.Infow("Collection not found in Firestore", "collection", docsnap.Ref.ID)
-			slugsToAdd = append(slugsToAdd, docsnap.Ref.ID)
-		} else {
-			slugToFloorMap[docsnap.Ref.ID] = docsnap.Data()["floor"].(float64)
-		}
-	}
-
-	// Call sweeper to update add new collections
-	if len(slugsToAdd) > 0 {
-		go h.sweeper.AddCollections(slugsToAdd)
-	}
-
-	for i, collection := range collections {
-		collection.Floor = slugToFloorMap[collection.Slug]
-		collections[i] = collection
-	}
-
-	return collections
 }
