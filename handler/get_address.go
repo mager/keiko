@@ -70,7 +70,7 @@ type GetAddressResp struct {
 	Address     string              `json:"address"`
 	Collections []AddressCollection `json:"collections"`
 	TotalETH    float64             `json:"totalETH"`
-	ETHPrice    float64             `json:"ethPrice"`
+	TotalUSD    float64             `json:"totalUSD"`
 	ENSName     string              `json:"ensName"`
 	UpdatedAt   time.Time           `json:"updatedAt"`
 	User        User                `json:"user"`
@@ -137,6 +137,11 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	} else {
 		h.logger.Info("User not found in database, returning", "address", address)
 	}
+
+	// Fetch ETH price
+	ethPriceUSD := h.cs.GetETHPrice()
+
+	resp.TotalUSD = adaptTotalUSD(resp.TotalETH, ethPriceUSD)
 
 	json.NewEncoder(w).Encode(resp)
 }
@@ -233,4 +238,11 @@ func (h *Handler) adaptUser(user database.User) User {
 		IsFren:      user.IsFren,
 		DiscordID:   user.DiscordID,
 	}
+}
+func adaptTotalUSD(totalETH float64, ethPriceUSD float64) float64 {
+	v := totalETH * ethPriceUSD
+	// Round to 2 decimal places
+	v = math.Round(v*100) / 100
+
+	return v
 }

@@ -47,7 +47,7 @@ func (c *CoinstatsClient) GetCoins() (CoinsResp, error) {
 		return coinsResp, nil
 	}
 
-	// Fetch collections
+	// Fetch ETH price
 	resp, err := c.httpClient.Get(u.String())
 	if err != nil {
 		log.Fatal(err)
