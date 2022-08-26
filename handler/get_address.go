@@ -74,6 +74,7 @@ type GetAddressResp struct {
 	ENSName     string              `json:"ensName"`
 	UpdatedAt   time.Time           `json:"updatedAt"`
 	User        User                `json:"user"`
+	Updating    bool                `json:"updating"`
 }
 
 // getAddress is the route handler for the GET /address/{address} endpoint
@@ -125,6 +126,9 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 		resp.User = h.adaptUser(user)
 		h.logger.Infow("User found in database", "address", address)
 		resp.Collections, resp.TotalETH = h.adaptWalletToCollectionResp(user.Wallet)
+		if len(user.Wallet.Collections) == 0 {
+			resp.Updating = true
+		}
 		sort.Slice(resp.Collections[:], func(i, j int) bool {
 			return resp.Collections[i].Value > resp.Collections[j].Value
 		})
