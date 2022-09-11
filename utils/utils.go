@@ -17,3 +17,11 @@ func Remove(slice []string, s string) []string {
 	}
 	return slice
 }
+
+func AdaptTotalUSD(totalETH float64, ethPriceUSD float64) float64 {
+	v := totalETH * ethPriceUSD
+	// Round to 2 decimal places
+	v = math.Round(v*100) / 100
+
+	return v
+}

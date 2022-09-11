@@ -11,6 +11,7 @@ import (
 	"cloud.google.com/go/firestore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/mux"
+	"github.com/mager/keiko/utils"
 	"github.com/mager/sweeper/database"
 	ens "github.com/wealdtech/go-ens/v3"
 )
@@ -141,7 +142,7 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 	// Fetch ETH price
 	ethPriceUSD := h.cs.GetETHPrice()
 
-	resp.TotalUSD = adaptTotalUSD(resp.TotalETH, ethPriceUSD)
+	resp.TotalUSD = utils.AdaptTotalUSD(resp.TotalETH, ethPriceUSD)
 
 	json.NewEncoder(w).Encode(resp)
 }
@@ -238,11 +239,4 @@ func (h *Handler) adaptUser(user database.User) User {
 		IsFren:      user.IsFren,
 		DiscordID:   user.DiscordID,
 	}
-}
-func adaptTotalUSD(totalETH float64, ethPriceUSD float64) float64 {
-	v := totalETH * ethPriceUSD
-	// Round to 2 decimal places
-	v = math.Round(v*100) / 100
-
-	return v
 }

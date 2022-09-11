@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/mager/keiko/utils"
 	"github.com/mager/sweeper/database"
 )
 
@@ -22,7 +23,8 @@ type Stat struct {
 type GetCollectionResp struct {
 	Name       string              `json:"name"`
 	Slug       string              `json:"slug"`
-	Floor      float64             `json:"floor"`
+	FloorETH   float64             `json:"floorETH"`
+	FloorUSD   float64             `json:"floorUSD"`
 	Updated    time.Time           `json:"updated"`
 	Thumb      string              `json:"thumb"`
 	Stats      []Stat              `json:"stats"`
@@ -56,7 +58,12 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	// Set slug
 	resp.Name = d["name"].(string)
 	resp.Slug = slug
-	resp.Floor = d["floor"].(float64)
+
+	ethPriceUSD := h.cs.GetETHPrice()
+
+	resp.FloorETH = d["floor"].(float64)
+	resp.FloorUSD = utils.AdaptTotalUSD(resp.FloorETH, ethPriceUSD)
+
 	resp.Updated = d["updated"].(time.Time)
 
 	thumb, ok := d["thumb"].(string)
