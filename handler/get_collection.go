@@ -70,5 +70,6 @@ func (h *Handler) getCollection(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		resp.Thumb = thumb
 	}
+
 	json.NewEncoder(w).Encode(resp)
 }

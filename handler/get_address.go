@@ -238,5 +238,6 @@ func (h *Handler) adaptUser(user database.User) User {
 		Twitter:     user.Twitter,
 		IsFren:      user.IsFren,
 		DiscordID:   user.DiscordID,
+		Settings:    user.Settings,
 	}
 }

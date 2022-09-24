@@ -73,9 +73,6 @@ func (h *Handler) registerRoutes() {
 	h.router.HandleFunc("/user/{address}", h.updateUser).
 		Methods("POST").
 		Name("updateUser")
-	h.router.HandleFunc("/user/{address}/metadata", h.updateUserMetadata).
-		Methods("POST").
-		Name("updateAvatar")
 	h.router.HandleFunc("/users", h.newUser).
 		Methods("POST")
 	h.router.HandleFunc("/following", h.getFollowing).
@@ -100,6 +97,14 @@ func (h *Handler) registerRoutes() {
 	// Search
 	h.router.HandleFunc("/search", h.search).
 		Methods("POST")
+
+	// Requires signature
+	h.router.HandleFunc("/user/{address}/avatar", h.updateAvatar).
+		Methods("POST").
+		Name("updateAvatar")
+	h.router.HandleFunc("/user/{address}/settings", h.updateSettings).
+		Methods("POST").
+		Name("updateSettings")
 
 	// Testing
 	h.router.HandleFunc("/collection/{slug}/tokens", h.getCollectionTokens).

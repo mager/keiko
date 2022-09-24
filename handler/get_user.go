@@ -10,16 +10,17 @@ import (
 )
 
 type User struct {
-	Name        string   `json:"name"`
-	Bio         string   `json:"bio"`
-	Photo       bool     `json:"photo"`
-	ENSName     string   `json:"ensName"`
-	Collections []string `json:"collections"`
-	Slug        string   `json:"slug"`
-	Twitter     string   `json:"twitter"`
-	OpenSea     string   `json:"openSea"`
-	IsFren      bool     `json:"IsFren"`
-	DiscordID   string   `json:"discordID"`
+	Name        string                `json:"name"`
+	Bio         string                `json:"bio"`
+	Photo       bool                  `json:"photo"`
+	ENSName     string                `json:"ensName"`
+	Collections []string              `json:"collections"`
+	Slug        string                `json:"slug"`
+	Twitter     string                `json:"twitter"`
+	OpenSea     string                `json:"openSea"`
+	IsFren      bool                  `json:"IsFren"`
+	DiscordID   string                `json:"discordID"`
+	Settings    database.UserSettings `json:"settings"`
 }
 
 // UserReq is a request to /user/{address}
@@ -34,7 +35,6 @@ type UserResp struct {
 func (h *Handler) fetchUser(address string) (database.User, error) {
 	// Fetch user from Firestore
 	var user database.User
-
 	docsnap, err := h.dbClient.Client.Collection("users").Doc(address).Get(h.ctx)
 	if err != nil {
 		h.logger.Error(err)
@@ -42,6 +42,7 @@ func (h *Handler) fetchUser(address string) (database.User, error) {
 	}
 
 	if docsnap.Exists() {
+		// TODO: Fix this
 		err = docsnap.DataTo(&user)
 		if err != nil {
 			h.logger.Error(err)
@@ -77,6 +78,7 @@ func (h *Handler) getUser(w http.ResponseWriter, r *http.Request) {
 			Twitter:     user.Twitter,
 			IsFren:      user.IsFren,
 			DiscordID:   user.DiscordID,
+			Settings:    user.Settings,
 		},
 	}
 

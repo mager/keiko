@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mager/sweeper/database"
 	"go.uber.org/zap"
 )
 
@@ -30,7 +31,8 @@ func ProvideSweeper(logger *zap.SugaredLogger) SweeperClient {
 		httpClient: &http.Client{
 			Transport: tr,
 		},
-		logger:   logger,
+		logger: logger,
+		// basePath: "http://localhost:8080",
 		basePath: "https://sweeper.floor.report",
 	}
 }
@@ -126,6 +128,48 @@ func (s *SweeperClient) UpdateUser(address string) bool {
 	u.RawQuery = q.Encode()
 
 	var jsonStr = []byte(fmt.Sprintf("{\"address\": \"%s\"}", address))
+	req, err := http.NewRequest("POST", u.String(), bytes.NewBuffer(jsonStr))
+	if err != nil {
+		s.logger.Error(err)
+		return false
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		s.logger.Error(err)
+		return false
+	}
+	defer resp.Body.Close()
+
+	var updateResp UpdateResp
+	err = json.NewDecoder(resp.Body).Decode(&updateResp)
+	if err != nil {
+
+		s.logger.Error(err)
+		return false
+	}
+
+	return true
+}
+
+// UpdateUserSettings updates user settings
+func (s *SweeperClient) UpdateUserSettings(address string, settings database.UserSettings) bool {
+	u, err := url.Parse(fmt.Sprintf("%s/update/user/settings", s.basePath))
+	if err != nil {
+		s.logger.Error(err)
+		return false
+	}
+	q := u.Query()
+	u.RawQuery = q.Encode()
+
+	// Decode settings into a JSON string
+	settingsJSON, err := json.Marshal(settings)
+	if err != nil {
+		s.logger.Error(err)
+		return false
+	}
+
+	var jsonStr = []byte(fmt.Sprintf("{\"address\": \"%s\", \"settings\": %s}", address, settingsJSON))
 	req, err := http.NewRequest("POST", u.String(), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		s.logger.Error(err)
