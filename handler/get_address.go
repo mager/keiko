@@ -144,6 +144,19 @@ func (h *Handler) getAddress(w http.ResponseWriter, r *http.Request) {
 
 	resp.TotalUSD = utils.AdaptTotalUSD(resp.TotalETH, ethPriceUSD)
 
+	// Filter out 0ETH collections
+	if user.Settings.HideZeroETHCollections {
+		var filteredCollections []AddressCollection
+		for _, c := range resp.Collections {
+			if c.Floor > 0 {
+				filteredCollections = append(filteredCollections, c)
+			}
+
+		}
+		resp.Collections = filteredCollections
+
+	}
+
 	json.NewEncoder(w).Encode(resp)
 }
 
